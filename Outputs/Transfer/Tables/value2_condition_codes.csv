@@ -1,0 +1,20 @@
+Code,Term,Cluster,Cluster category
+314462001,Average 24 hour diastolic blood pressure (observable entity),Ambulatory blood pressure codes,Observation measurement assessment and screening
+314449000,Average 24 hour systolic blood pressure (observable entity),Ambulatory blood pressure codes,Observation measurement assessment and screening
+314461008,Average day interval diastolic blood pressure (observable entity),Ambulatory blood pressure codes,Observation measurement assessment and screening
+314446007,Average day interval systolic blood pressure (observable entity),National diabetes audit (NDA) blood pressure (BP) codes,Observation measurement assessment and screening
+413605002,Average home diastolic blood pressure (observable entity),National diabetes audit (NDA) blood pressure (BP) codes,Observation measurement assessment and screening
+413606001,Average home systolic blood pressure (observable entity),National diabetes audit (NDA) blood pressure (BP) codes,Observation measurement assessment and screening
+314460009,Average night interval diastolic blood pressure (observable entity),National diabetes audit (NDA) blood pressure (BP) codes,Observation measurement assessment and screening
+314445006,Average night interval systolic blood pressure (observable entity),National diabetes audit (NDA) blood pressure (BP) codes,Observation measurement assessment and screening
+314440001,Average systolic blood pressure (observable entity),National diabetes audit (NDA) blood pressure (BP) codes,Observation measurement assessment and screening
+928021000000108,Baseline blood pressure (observable entity),National diabetes audit (NDA) blood pressure (BP) codes,Observation measurement assessment and screening
+75367002,Blood pressure (observable entity),National diabetes audit (NDA) blood pressure (BP) codes,Observation measurement assessment and screening
+163033001,Lying blood pressure (observable entity),National diabetes audit (NDA) blood pressure (BP) codes,Observation measurement assessment and screening
+163026001,On examination - blood pressure borderline raised (finding),National diabetes audit (NDA) blood pressure (BP) codes,Observation measurement assessment and screening
+163020007,On examination - blood pressure reading (finding),National diabetes audit (NDA) blood pressure (BP) codes,Observation measurement assessment and screening
+163025002,On examination - blood pressure reading normal (finding),National diabetes audit (NDA) blood pressure (BP) codes,Observation measurement assessment and screening
+335661000000109,Self measured blood pressure reading (observable entity),National diabetes audit (NDA) blood pressure (BP) codes,Observation measurement assessment and screening
+163035008,Sitting blood pressure (observable entity),National diabetes audit (NDA) blood pressure (BP) codes,Observation measurement assessment and screening
+163034007,Standing blood pressure (observable entity),National diabetes audit (NDA) blood pressure (BP) codes,Observation measurement assessment and screening
+72313002,Systolic arterial pressure (observable entity),National diabetes audit (NDA) blood pressure (BP) codes,Observation measurement assessment and screening

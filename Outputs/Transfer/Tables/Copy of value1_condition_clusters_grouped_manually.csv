@@ -1,0 +1,113 @@
+Cluster category,Cluster,Entries per cluster,General category
+Observation measurement assessment and screening,Alcohol consumption codes,161323,Alcohol and smoking
+Observation measurement assessment and screening,Alcohol Use Disorders Identification Test (AUDIT) codes,1757,Alcohol and smoking
+Observation measurement assessment and screening,Alcohol Use Disorder Identification Test Consumption (AUDIT C) codes,7614,Alcohol and smoking
+Observation measurement assessment and screening,National diabetes audit (NDA) smoking habit codes,53691,Alcohol and smoking
+Observation measurement assessment and screening,Smoker codes,38323,Alcohol and smoking
+Observation measurement assessment and screening,Smoking habit codes,52788,Alcohol and smoking
+Observation measurement assessment and screening,Code for ex-smoker,10682,Alcohol and smoking
+Observation measurement assessment and screening,Code for never smoked,2180,Alcohol and smoking
+Observation measurement assessment and screening,Excessive alcohol consumption codes,119,Alcohol and smoking
+Observation measurement assessment and screening,National diabetes audit (NDA) blood pressure (BP) codes,262989,Blood pressure
+Observation measurement assessment and screening,Blood pressure (BP) recording codes,262989,Blood pressure
+Observation measurement assessment and screening,Ambulatory blood pressure codes,1285,Blood pressure
+Investigations test and results,Liver function test results,340787,Liver function tests
+Investigations test and results,Urea and Electrolytes test results,220659,Urea and electrolytes
+Investigations test and results,Codes for serum creatinine,112837,Renal function
+Investigations test and results,Estimated glomerular filtration rate,97198,Renal function
+Investigations test and results,Haemoglobin test results,90835,Haemoglobin
+Investigations test and results,IFCC HbA1c monitoring range codes,65779,Glucose and HbA1c
+Investigations test and results,Thyroid function test codes,61907,Other common lab tests
+Investigations test and results,Calcium test result codes,58261,Other common lab tests
+Investigations test and results,Total cholesterol codes,52736,Lipids
+Investigations test and results,Total cholesterol codes with a value,52598,Lipids
+Investigations test and results,High density lipoprotein (HDL) cholesterol test result codes,48964,Lipids
+Investigations test and results,Total cholesterol high-density lipoprotein (HDL) codes,45066,Lipids
+Investigations test and results,Triglyceride test result codes,39105,Lipids
+Investigations test and results,Non-high density lipoprotein (Non-HDL) cholesterol test result codes,33030,Lipids
+Investigations test and results,Urine albumin codes,30683,Renal function
+Investigations test and results,Glucose test recording,27812,Glucose and HbA1c
+Investigations test and results,Low density lipoprotein (LDL) cholesterol test results,24025,Lipids
+Investigations test and results,Gamma-glutamyl transferase test results,17556,Liver function tests
+Investigations test and results,Codes for Albumin Creatinine and Protein Creatinine Ratio for chronic kidney disease (CKD),16180,Renal function
+Investigations test and results,INR Time in therapeutic range,5713,Other common lab tests
+Investigations test and results,Cockcroft Gault - estimated glomerular filtration rate,5251,Renal function
+Investigations test and results,Fasting plasma glucose codes,2032,Glucose and HbA1c
+Diagnoses and findings (including resolved and remission),Codes for proteinuria,3,Renal function
+Diagnoses and findings (including resolved and remission),Codes for proteinuria for chronic kidney disease (CKD),3,Renal function
+Diagnoses and findings (including resolved and remission),Persistent proteinuria codes,3,Renal function
+Diagnoses and findings (including resolved and remission),Chronic kidney disease (CKD) stage 3 4 and 5 codes,2,Renal function
+Diagnoses and findings (including resolved and remission),Chronic kidney disease (CKD) stage 3-5 codes,2,Renal function
+Investigations test and results,Hepatitis B blood test codes,1,Renal function
+COVID-19 activity,COVID19 testing diagnoses and related activity,10,COVID
+COVID-19 activity,Codes relating to COVID19 risk indicators of infection activities regarding COVID19 and long COVID management and assessment,46,COVID
+Diagnoses and findings (including resolved and remission),National diabetes audit (NDA) diabetes mellitus diagnosis codes,70,Diabetes
+Diagnoses and findings (including resolved and remission),Non Type 1 or Type 2 diabetes mellitus codes used in National audit,70,Diabetes
+Diagnoses and findings (including resolved and remission),Diabetes Type 1 codes used in National Audit,30,Diabetes
+Diagnoses and findings (including resolved and remission),Diabetes mellitus codes for pneumococcal service,60,Diabetes
+Diagnoses and findings (including resolved and remission),Diabetes mellitus codes,60,Diabetes
+Diagnoses and findings (including resolved and remission),National diabetes audit (NDA) diabetes mellitus codes to determine diabetes type for the audit,46,Diabetes
+Diagnoses and findings (including resolved and remission),Codes for type 1 diabetes,25,Diabetes
+Diagnoses and findings (including resolved and remission),Codes for diabetes (non-type 1),14,Diabetes
+Diagnoses and findings (including resolved and remission),Codes for diabetes type 2,14,Diabetes
+Diagnoses and findings (including resolved and remission),Diabetes Type 2 codes used in National Audit,21,Diabetes
+Patient factors,Active and inactive ethnicity codes,6,Ethnicity
+Observation measurement assessment and screening,Assessment for dementia codes,1597,Neurology assessments
+Review and monitoring,Epilepsy seizure frequency codes,520,Neurology assessments
+Diagnoses and findings (including resolved and remission),Depression diagnosis codes,1,Neurology assessments
+Declines contraindications and other exceptions,Statin contraindications (expiring),14,Other diagnoses
+Management and treatment,Palliative care codes,3,Other diagnoses
+Diagnoses and findings (including resolved and remission),Electrocardiogram (ECG) indicating atrial fibrillation or flutter codes,4,Other tests
+Declines contraindications and other exceptions,Immunosuppression codes (persisting),19,Other diagnoses
+Diagnoses and findings (including resolved and remission),Abdominal aortic aneurysm diagnosis codes,2,Other diagnoses
+Diagnoses and findings (including resolved and remission),Falls codes,2,Other diagnoses
+Diagnoses and findings (including resolved and remission),Atrial fibrillation codes,1,Other diagnoses
+Observation measurement assessment and screening,Breast cancer screening codes,1,Other diagnoses
+Diagnoses and findings (including resolved and remission),Codes for heart failure due to left ventricular systolic dysfunction (LVSD),1,Other diagnoses
+Investigations test and results,Dual energy X-ray absorptiometry (DXA) scan result with a T score value,212,Other tests
+Investigations test and results,Serum fructosamine codes,90,Other tests
+Investigations test and results,Echocardiogram (Echo) codes,11,Other tests
+Observation measurement assessment and screening,Body mass index (BMI) codes,771546,"BMI, weight and height"
+Observation measurement assessment and screening,Body mass index (BMI) codes with an associated BMI value,382003,"BMI, weight and height"
+Observation measurement assessment and screening,National diabetes audit (NDA) body mass index (BMI) codes,385893,"BMI, weight and height"
+Observation measurement assessment and screening,Weight measured,82239,"BMI, weight and height"
+Observation measurement assessment and screening,Height measured,46339,"BMI, weight and height"
+Investigations test and results,Feet examination (neuropathy testing or peripheral pulses) codes,1993,Other physical assessments
+Observation measurement assessment and screening,Body mass index (BMI) healthy codes,524,"BMI, weight and height"
+Observation measurement assessment and screening,Body mass index (BMI) obese codes,1741,"BMI, weight and height"
+Observation measurement assessment and screening,Body mass index (BMI) codes >= 30 without an associated BMI value,1741,"BMI, weight and height"
+Observation measurement assessment and screening,Body mass index (BMI) overweight codes,625,"BMI, weight and height"
+Observation measurement assessment and screening,Body mass index (BMI) codes >= 40 without an associated BMI value,72,"BMI, weight and height"
+Observation measurement assessment and screening,Body mass index (BMI) underweight codes,63,"BMI, weight and height"
+Observation measurement assessment and screening,Codes for Medical Research Council (MRC) breathlessness scale score greater than or equal to 3,8,Other physical assessments
+Observation measurement assessment and screening,Codes for Medical Research Council (MRC) breathlessness scale score,9,Other physical assessments
+Diagnoses and findings (including resolved and remission),Codes indicating the patient is pregnant,22,Pregnancy
+Diagnoses and findings (including resolved and remission),Pregnant patients at any stage of pregnancy,22,Pregnancy
+Investigations test and results,Peak expiratory flow rate (PEFR) codes,10495,Respiratory assessments
+Observation measurement assessment and screening,Asthma exercise codes,674,Respiratory assessments
+Observation measurement assessment and screening,Asthma day symptom codes,600,Respiratory assessments
+Observation measurement assessment and screening,Asthma sleep codes,399,Respiratory assessments
+Diagnoses and findings (including resolved and remission),Asthma emergency admission codes,61,Respiratory assessments
+Diagnoses and findings (including resolved and remission),Severe asthma and dust related lung disease codes,84,Respiratory assessments
+Diagnoses and findings (including resolved and remission),Asthma diagnosis codes,54,Respiratory assessments
+Diagnoses and findings (including resolved and remission),Chronic obstructive pulmonary disease (COPD) codes,28,Respiratory assessments
+Diagnoses and findings (including resolved and remission),Chronic respiratory disease codes,28,Respiratory assessments
+Diagnoses and findings (including resolved and remission),Chronic obstructive pulmonary disease (COPD) emphysema and associated lung diseases codes,28,Respiratory assessments
+Diagnoses and findings (including resolved and remission),Chronic respiratory disease (CRD) codes,28,Respiratory assessments
+Review and monitoring,Codes for chronic obstructive pulmonary disease (COPD) review,6,Respiratory assessments
+Investigations test and results,Spirometry codes for chronic obstructive pulmonary disease (COPD),2,Respiratory assessments
+Observation measurement assessment and screening,Spirometry codes for asthma,2,Respiratory assessments
+Observation measurement assessment and screening,Frailty assessment codes,16002,Risk scores
+Observation measurement assessment and screening,Cardiovascular disease (CVD) risk assessment codes,12273,Risk scores
+Observation measurement assessment and screening,Cardiovascular disease (CVD) risk assessment done,12274,Risk scores
+Observation measurement assessment and screening,Stroke risk assessment using CHA2DS2-VASc,3023,Risk scores
+Observation measurement assessment and screening,HASBLED score codes,695,Risk scores
+Observation measurement assessment and screening,Stroke risk assessment using CHADS2,185,Risk scores
+Observation measurement assessment and screening,Anxiety screening codes,3779,Risk scores
+Observation measurement assessment and screening,Depression screening codes,2693,Risk scores
+Observation measurement assessment and screening,Cardiovascular disease (CVD) risk assessment codes greater than 20 per cent,1,Risk scores
+Diagnoses and findings (including resolved and remission),Learning disability (LD) codes,1,Risk scores
+Diagnoses and findings (including resolved and remission),DownÆs syndrome codes,1,Risk scores
+Vaccinations and immunisations,Pneumococcal vaccination codes,21,Vaccinations
+Vaccinations and immunisations,MMR first dose vaccination codes,3,Vaccinations
+Vaccinations and immunisations,MMR second dose vaccination codes,3,Vaccinations
