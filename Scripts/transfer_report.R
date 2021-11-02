@@ -41,8 +41,8 @@ library(forcats) # to reorder factors
 library(tidytext) # reordering characters acording to a grouping variable (for plots)
 library(ggdark) # themes for ggplot 
 library(ggthemes) # themes for ggplot 
+# library(plotly) # generate interactive plots (for inspection of individual points); commented as only needed ad hoc
 
-  
   
 # set working directory
 setwd("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/DPhil_RECOVERY")
@@ -271,6 +271,8 @@ rand_dates<-rand_dates%>%
 rm(withdrew)
 
 ## !Code to load filtered gp and meds datasets --------
+
+# load gp
 gp <- read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Input datasets/INT08_GDPPR/0047/gp_filtered/gp_filtered.csv", 
                           col_types = cols(study_number = col_character(),
                                            sex = readr::col_factor(levels = c("0","1")),
@@ -284,7 +286,12 @@ gp <- read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gu
                                            value1_prescription = col_number(),
                                            value2_prescription = col_number()))
 
+## convert to lazy datatable for dtplyr operations
+gp_dt<-lazy_dt(gp)
+rm(gp)
 
+
+# load meds 
 meds <- read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Input datasets/INT07_PCAREMEDS/0049/meds_filtered.csv", 
                  col_types = cols(study_number = col_character(),
                                   bsa_prescription_id = col_character(), 
@@ -1394,10 +1401,6 @@ rm(date_plot,
 
 #### entries with same date but different record date --------
 
-gp_dt<-lazy_dt(gp)
-
-rm(gp)
-
 x<- gp_dt%>%
   select(study_number, code, date, record_date, lsoa, gp_system_supplier)%>%
   group_by(study_number, code, date)%>%
@@ -1419,9 +1422,10 @@ x%>%
 
 # plot of date diff, gp system supplier, and year
 
-x%>%
+p<- x%>%
   mutate(record_year=str_sub(record_date, 1,4),
          date_diff=as.numeric(date_diff))%>%
+  mutate(!is.na(date_diff))%>%
   mutate(record_year=as.numeric(record_year))%>%
   ggplot(aes(record_year, date_diff, color=gp_system_supplier))+
   geom_point(alpha=0.5)+
@@ -1432,17 +1436,19 @@ x%>%
        subtitle="(based on record_date differences for the same entry)",
        y="Entries",
        x="Record year",
-       caption="Capped before 1950"
+       caption="Capped before 1950\nOriginal entry for each record removed from plot"
        )+
   xlim(c(1950,2022))
   
+# ggplotly(p)
+
 ggsave("Outputs/Transfer/Figures/duplicates_date_diff_gp_supplier.png",
-       last_plot(),
+       p,
        height=8,
        width=20,
        dpi="retina")
 
-
+rm(p)
 
 
 # per lsoa
@@ -1453,7 +1459,7 @@ x1%>%filter(lsoa_diff>1)%>%nrow()
 # 289,270 entries have different lsoas
 
 
-# per gp provider
+# per gp provider and location 
 
 a<-x1%>%
   filter(date_diff>2|date_diff<(-2))%>%
@@ -1477,9 +1483,9 @@ a%>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = "right",
         legend.title = element_blank())+
-  labs(title="Duplicate entries along time, per GP system supplier, and location differences",
+  labs(title="Duplicate entries along time, per GP system supplier, and according to location differences",
        subtitle="(for record_date difference over 2 days only)",
-       caption="Duplicate entries defined as having same study_number, code, and date, but with different record_date",
+       caption="Duplicate entries defined as having same study_number, code, and date, but with different record_date\nOriginal entry for each record removed from plot",
        y="Number",
        x="Record year")
   
@@ -2488,9 +2494,9 @@ gp_cluster_lookup <-read_excel("K:/QNAP/RECOVERY-deidentified/Team folders/Guilh
 mutate_when <- function(data, ...) {
   dots <- eval(substitute(alist(...)))
   for (i in seq(1, length(dots), by = 2)) {
-    condition <- eval(dots[[i]], envir = data)
-    mutations <- eval(dots[[i + 1]], envir = data[condition, , drop = FALSE])
-    data[condition, names(mutations)] <- mutations
+    prescription <- eval(dots[[i]], envir = data)
+    mutations <- eval(dots[[i + 1]], envir = data[prescription, , drop = FALSE])
+    data[prescription, names(mutations)] <- mutations
   }
   data
 }
@@ -2798,6 +2804,8 @@ a<-gp%>%
 # missing: 7477375 for value 1 (complete: 9908044 - 7477375 = 2430669; 24.5%)
 # missing: 9811917 for value 2 (complete: 9908044 - 9811917 = 96127; 0.97%)
 
+
+### descriptive summaries --------
 a%>%
   as.data.frame()%>%
   rename(nmissing =n_missing,
@@ -2821,12 +2829,13 @@ a%>%
 write_csv(a1, "Outputs/Transfer/Tables/value1_condition_and_value2_condition_table.csv")
                              
 
-x<-gp%>%
+x<-gp_dt%>%
   filter(!is.na(value1_condition)|
          !is.na(value2_condition))
 
 rm(a, a1)
 
+# cross coding
 gp%>%
   mutate(value1_condition_flag = if_else(!is.na(value1_condition), 1, 0),
          value2_condition_flag = if_else(!is.na(value2_condition), 1, 0))%>%
@@ -2834,59 +2843,95 @@ gp%>%
 
 ### histograms -------
 
+
+x<-gp_dt%>%
+  select(code, date, value1_condition, value2_condition, gp_system_supplier)%>%
+  pivot_longer(-c(code, date, gp_system_supplier), names_to="group", values_to="value")%>%
+  filter(!is.na(value))%>%
+  as_tibble()
+
+x%>%
+  group_by(group, gp_system_supplier)%>%
+  summarise(median=median(value, na.rm = T),
+            n=n())->x1
+
+
+
 p1<- x%>%
-  ggplot(aes(value1_condition))+
-  geom_histogram()+
+  filter(group=="value1_condition")%>%
+  as_tibble()%>%
+  ggplot(aes(value))+
+  geom_histogram(bins=100)+
   labs(title="Histograms for the value1_condition and value2_condition fields",
        subtitle = "Value1_condition")+
   theme_gray(base_size = 20)+
-  theme(axis.title.x = element_blank())
-  
+  xlim(c(-100,1000))+
+  theme(axis.title.x = element_blank())+
+  facet_wrap(~gp_system_supplier,ncol=4,
+             #scales="free_y"
+             )+
+  geom_vline(data=x1%>%filter(group=="value1_condition"), aes(xintercept = median), col="dark red", linetype="dashed")+
+  geom_text(data= x1%>%filter(group=="value1_condition"),
+            mapping = aes(x=median, y=n/10, label=paste0("Median: ", median)),
+            hjust=-0.1,
+            size=6
+  )+
+  ylab(element_blank())
+
 p2<- x%>%
-  ggplot(aes(value2_condition))+
-  geom_histogram()+
+  filter(group=="value2_condition")%>%
+  as_tibble()%>%
+  ggplot(aes(value))+
+  geom_histogram(bins=100)+
   labs(subtitle = "Value2_condition",
-       caption = "Note that the x axis differs in both histograms")+
+       caption = "All histograms capped at 1000\nNote that the y axes differ for value1_condition and value2_condition")+
+  xlim(c(-100,1000))+
   theme_gray(base_size = 20)+
-  theme(axis.title.x = element_blank())
+  theme(axis.title.x = element_blank())+
+  facet_wrap(~gp_system_supplier,ncol=4,
+             #scales="free_y"
+             )+
+  geom_vline(data=x1%>%filter(group=="value2_condition"), aes(xintercept = median), col="dark red", linetype="dashed")+
+  geom_text(data= x1%>%filter(group=="value2_condition"),
+            mapping = aes(x=median, y=n/10, label=paste0("Median: ", median)),
+            hjust=-0.1,
+            size=6
+  )+
+  ylab(element_blank())
+
 
 p=p1/p2
 
-ggsave('Outputs/Transfer/Figures/value1_condition_and_valu2_condition_histograms.png', 
+
+ggsave('Outputs/Transfer/Figures/value1_condition_and_value2_condition_histograms.png', 
        last_plot(),
        height=10,
        width=20,
        dpi="retina")
 
-rm(p,p1,p2)
+rm(p,p1,p2, x1)
+
 
 ### coding along time and per supplier -------
 
-x%<>%
-  mutate(value1_condition_flag = if_else(!is.na(value1_condition), 1, 0),
-         value2_condition_flag = if_else(!is.na(value2_condition), 1, 0))
-
 x%>%
-  select(date, gp_system_supplier, value1_condition_flag, value2_condition_flag)%>%
+  select(date, gp_system_supplier, value, group)%>%
   mutate(year=str_sub(date, 1, 4))%>%
-  group_by(year, gp_system_supplier)%>%
-  summarise(n_value1 = sum(value1_condition_flag),
-            n_value2 = sum(value2_condition_flag))%>%
-  rename(value1_condition=n_value1,
-         value2_condition=n_value2)%>%
+  group_by(year, gp_system_supplier, group)%>%
+  summarise(n = n())%>%
   mutate(year=as.numeric(year))%>%
-  pivot_longer(-c(year,gp_system_supplier), names_to = "key", values_to = "value")%>%
-  ggplot(aes(year, value, color=key, groups=key))+
+  ggplot(aes(year, n, color=group, groups=group))+
   geom_line()+
   geom_point()+
   facet_grid(cols=vars(gp_system_supplier),
-             rows=vars(key))+
+             rows=vars(group),
+             scales="free_y")+
   theme_gray(base_size = 20)+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = "none")+
-  # oxpop_grey_panel+
-  labs(title="Coding along time and per system supplier",
-       subtitle="(presence of an entry, regardless of value)")+
+  labs(title="Coding of value1_condition and value2_condition along time and per system supplier",
+       subtitle="(presence of an entry, regardless of value)",
+       caption="Note that y axes differ for value1_condition and value2_condition")+
   ylab("Number of entries")+
   xlab("Year")
 
@@ -3025,10 +3070,186 @@ rm(x2,t2)
 
 ### general inspection  ------
 
-gp%>%
+gp_dt%>%
   skim(value1_prescription, value2_prescription)
 
+### descriptive summaries ------
 
+a<-gp_dt%>%
+  skim(value1_prescription, value2_prescription)
+
+a%>%
+  as.data.frame()%>%
+  rename(nmissing =n_missing,
+         complete = complete_rate)%>%
+  mutate('Complete entries (total)' = (nrow(gp_dt)-nmissing),
+         'Complete entries (proportion)' = paste0(round(complete*100, 2),"%"),
+         numeric.sd=round(numeric.sd,2),
+         numeric.mean = round(numeric.mean, 2),
+         numeric.p50 = round(numeric.p50, 2),
+         .keep="unused")%>%
+  select(Field=skim_variable,
+         'Complete entries (total)',
+         'Complete entries (proportion)',
+         Mean= numeric.mean,
+         "Standard deviation" = numeric.sd,
+         Median = numeric.p50,
+         Q1 = numeric.p25,
+         Q3 = numeric.p75,
+         Minimum = numeric.p0,
+         Maximum = numeric.p100) ->a1
+
+write_csv(a1, "Outputs/Transfer/Tables/value1_prescription_and_value2_prescription_table.csv")
+
+# cross coding
+gp_dt%>%
+  mutate(value1_prescription_flag = if_else(!is.na(value1_prescription), 1, 0),
+         value2_prescription_flag = if_else(!is.na(value2_prescription), 1, 0))%>%
+  count(value1_prescription_flag, value2_prescription_flag)
+
+
+
+### histograms -----
+
+x<-gp_dt%>%
+  select(code, date, value1_prescription, value2_prescription, gp_system_supplier)%>%
+  pivot_longer(-c(code, date, gp_system_supplier), names_to="group", values_to="value")%>%
+  filter(!is.na(value))%>%
+  as_tibble()
+
+x%>%
+  group_by(group, gp_system_supplier)%>%
+  summarise(median=median(value, na.rm = T),
+            n=n())->x1
+
+
+
+p1<- x%>%
+  filter(group=="value1_prescription")%>%
+  as_tibble()%>%
+  ggplot(aes(value))+
+  geom_histogram(bins=100)+
+  labs(title="Histograms for the value1_prescription and value2_prescription fields",
+       subtitle = "Value1_prescription")+
+  theme_gray(base_size = 20)+
+  xlim(c(-10,500))+
+  theme(axis.title.x = element_blank())+
+  facet_wrap(~gp_system_supplier,ncol=4,
+             # scales="free_y"
+             )+
+  geom_vline(data=x1%>%filter(group=="value1_prescription"), aes(xintercept = median), col="dark red", linetype="dashed")+
+  geom_text(data= x1%>%filter(group=="value1_prescription"),
+            mapping = aes(x=median, y=400000, label=paste0("Median: ", median)),
+            hjust=-0.2,
+            size=6
+  )+
+  ylab(element_blank())
+
+p2<- x%>%
+  filter(group=="value2_prescription")%>%
+  as_tibble()%>%
+  ggplot(aes(value))+
+  geom_histogram(bins=100)+
+  labs(subtitle = "Value2_prescription",
+       caption = "All plots capped at 500\nNote that the y axes differ for value1_prescription and value2_prescription")+
+  xlim(c(-10,500))+
+  theme_gray(base_size = 20)+
+  theme(axis.title.x = element_blank())+
+  facet_wrap(~gp_system_supplier,ncol=4,
+             #scales="free_y"
+             )+
+  geom_vline(data=x1%>%filter(group=="value2_prescription"), aes(xintercept = median), col="dark red", linetype="dashed")+
+  geom_text(data= x1%>%filter(group=="value2_prescription"),
+            mapping = aes(x=median, y=1000000, label=paste0("Median: ", median)),
+            hjust=-0.2,
+            size=6
+  )+
+  ylab(element_blank())
+
+
+p=p1/p2
+
+
+ggsave('Outputs/Transfer/Figures/value1_prescription_and_value2_prescription_histograms.png', 
+       last_plot(),
+       height=10,
+       width=20,
+       dpi="retina")
+
+rm(p,p1,p2, x1)
+
+
+### coding along time and per supplier -------
+
+x<-gp_dt%>%
+  filter(!is.na(value1_prescription)|
+           !is.na(value2_prescription))
+
+x%<>%
+  mutate(value1_prescription_flag = if_else(!is.na(value1_prescription), 1, 0),
+         value2_prescription_flag = if_else(!is.na(value2_prescription), 1, 0))
+
+x%>%
+  select(date, gp_system_supplier, value1_prescription_flag, value2_prescription_flag)%>%
+  mutate(year=str_sub(date, 1, 4))%>%
+  group_by(year, gp_system_supplier)%>%
+  summarise(n_value1 = sum(value1_prescription_flag>0),
+            n_value2 = sum(value2_prescription_flag>0))%>%
+  rename(value1_prescription=n_value1,
+         value2_prescription=n_value2)%>%
+  pivot_longer(-c(year,gp_system_supplier), names_to = "key", values_to = "value")%>%
+  filter(value>0)%>%
+  as_tibble()%>%
+  mutate(year=as.numeric(year))%>%
+  ggplot(aes(year, value, color=key, group=NA))+
+  geom_line()+
+  geom_point()+
+  facet_grid(cols=vars(gp_system_supplier),
+             rows=vars(key))+
+  theme_gray(base_size = 20)+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "none")+
+  labs(title="Coding along time and per GP system supplier",
+       subtitle="(presence of an entry, regardless of value)",
+       y="Number of entries",
+       x="Year"
+       )+
+  scale_x_continuous(breaks=seq(1900,2020,by=20))
+
+
+
+ggsave('Outputs/Transfer/Figures/value1_prescription_and_value2_prescription_timeseries_suppliers.png', 
+       last_plot(),
+       height=10,
+       width=20,
+       dpi="retina")
+
+rm(x)
+
+### codes associated ------
+
+#### value1_condition -------
+gp_dt%>%
+  filter(!is.na(value1_prescription))%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  select(Cluster_Desc, Cluster_Category, value1_prescription)%>%
+  as_tibble()%>%
+  filter(Cluster_Category=="Medications"|is.na(Cluster_Category)|Cluster_Category=="Vaccinations and immunisations")%>%
+  ggplot(aes(x=value1_prescription, y=fct_rev(Cluster_Desc), fill=Cluster_Desc))+
+  geom_density_ridges(scale=1)+
+  scale_x_continuous(limits=c(0,550), breaks=c(0,7,28, 56, 100,120,200,240,300,400,500,600))+
+  theme_gray(base_size=20)+
+  theme(legend.position = "none")+
+  labs(title="Coding of Value1_prescription for medication clusters",
+       caption="Plot capped at 550",
+       y="Cluster")+
+  geom_vline(xintercept=c(7,28,56,120,200,240), linetype="dashed")
+
+ggsave('Outputs/Transfer/Figures/value1_prescription_medication_clusters.png', 
+       last_plot(),
+       height=10,
+       width=20,
+       dpi="retina")
 
 
 ## links -------
@@ -3492,3 +3713,4 @@ rm(a,p,t,t1,t2)
 
 
 # Drug groups -----------------
+x=a1$media
