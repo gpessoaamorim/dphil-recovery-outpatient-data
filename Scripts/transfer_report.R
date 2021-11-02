@@ -45,7 +45,7 @@ library(ggthemes) # themes for ggplot
   
   
 # set working directory
-setwd("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis")
+setwd("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/DPhil_RECOVERY")
 
 # Some system settings ------
 options(scipen=10000) # prevent scientific notation in plots
@@ -190,7 +190,7 @@ snomed_descriptions<-read_csv("Tools/SNOMED terminology/Aggregated/rdiagnosislis
 
 # Load RECOVERY drug codelists ------------------
 ## SNOMED codelists ------------------
-file.list <- list.files(path="K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/Codelists/Medications_SNOMED/", full.names=T, pattern = "*.xlsx")
+file.list <- list.files(path="K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/DPhil_RECOVERY/Tools/Codelists/Medications_SNOMED/", full.names=T, pattern = "*.xlsx")
 
 df = lapply(file.list, function(i){
   x=read_excel(i, sheet="Codelist")
@@ -206,7 +206,7 @@ rm(file.list,df)
 
 ## BNF codelists------------------
 
-file.list <- list.files(path="K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/Codelists/Medications_BNF/", full.names=T, pattern = "*.xlsx")
+file.list <- list.files(path="K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/DPhil_RECOVERY/Tools/Codelists/Medications_BNF/", full.names=T, pattern = "*.xlsx")
 
 df = lapply(file.list, function(i){
   x=read_excel(i, sheet="Codelist")
@@ -487,7 +487,7 @@ f3<-p1+p2+plot_layout(nrow=2, heights=c(2,1))
 
 figure<-f2/f3
 
-ggsave("Outputs/Transfer/Figures/Entries_per_participant.tiff",
+ggsave("Outputs/Transfer/Figures/Entries_per_participant.png",
        figure,
        height=10,
        dpi = 700)
@@ -1173,7 +1173,7 @@ processed_timestamp_plot<-
   facet_grid(rows=vars(key), scales = "free_y")+
   scale_x_date(date_breaks = "1 month", date_labels = "%b %Y")
 
-ggsave("Outputs/Transfer/Figures/processed_timestamp_plot.tiff",
+ggsave("Outputs/Transfer/Figures/processed_timestamp_plot.png",
        last_plot(),
        dpi=700)
 
@@ -1209,9 +1209,8 @@ reporting_period_end_date_plot<-
   ylab("Count")+
   xlab("Reporting period end date")
 
-ggsave("Outputs/Transfer/Figures/reporting_period_end_date.tiff",
+ggsave("Outputs/Transfer/Figures/reporting_period_end_date.png",
        last_plot(),
-       device='tiff',
        dpi=700)
 
 rm(reporting_period_end_date_plot)
@@ -1379,9 +1378,8 @@ gp%>%
 
 dates_plot=date_plot/record_date_plot
 
-ggsave("Outputs/Transfer/Figures/date_and_record_date.tiff",
+ggsave("Outputs/Transfer/Figures/date_and_record_date.png",
        last_plot(),
-       device='tiff',
        dpi=700,
        height=10)
 
