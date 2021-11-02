@@ -1,0 +1,7 @@
+# ignoring system R Studio files
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+.Rproj
+DPhil_RECOVERY.Rproj
