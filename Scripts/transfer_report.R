@@ -124,42 +124,88 @@ gp_cluster_lookup <-read_excel("K:/QNAP/RECOVERY-deidentified/Team folders/Guilh
 gp_cluster_lookup$Cluster_Desc%<>%as.factor()
 
   # renaming categories to make them shorter
-levels(gp_cluster_lookup$Cluster_Desc)<-list('ACE' = "Angiotensin-converting enzyme (ACE) inhibitor prescription codes",
-                                             'ARB' = "Angiotensin II receptor blockers (ARB) prescription codes",
-                                             'AntiHT'="Antihypertensive medications",
-                                             'Antipsychotics' ="Antipsychotic drug codes",
-                                             'Asthma drugs'="Asthma-related drug treatment codes",
-                                             'Asthma ICS' = "Asthma inhaled corticosteroids codes",
-                                             'Bone sparing agents' = "Bone sparing agent drug codes",
-                                             'Bone sparing therapy' = "Bone sparing therapy codes",
-                                             'COPD drugs' = "Chronic obstructive pulmonary disease (COPD) drug codes",
-                                             'Clopidogrel drug codes' = "Clopidogrel drug codes",
-                                             'Clopidogrel prophylaxis codes' = "Clopidogrel prophylaxis codes",
-                                             'Lithium stopped' = "Code for stopped lithium",
-                                             'Constipation treatment' = "Constipation treatment codes",
-                                             'Steroids'="Corticosteroid drug codes",
-                                             'Diabetes drugs' = "Diabetes mellitus drugs codes",
-                                             'Dipyridamole'="Dipyridamole prescription codes",
-                                             'Epilepsy drugs' = "Drug treatment for epilepsy",
-                                             'Ezetimibe' = "Ezetimibe drug codes",
-                                             'Flu vaccine'="Flu vaccine drug codes",
-                                             'Hypothiroidism drugs' = "Hypothyroidism treatment codes",
-                                             'Immunossuppresion drugs'="Immunosuppression drugs",
-                                             'Beta-blockers (licensed)'="Licensed beta-blocker prescription codes",
-                                             'Lithium'="Lithium prescription codes",
-                                             'Metformin'="Metformin drug codes",
-                                             'Oral anticoagulation drugs'="Oral anticoagulant drug codes",
-                                             'Oral anticoagulation prophylaxis'="Oral anticoagulant prophylaxis codes",
-                                             'OTC salicylate'="Over the counter (OTC) salicylate codes",
-                                             'Pharmacotherapy codes'="Pharmacotherapy codes",
-                                             'Pharmacotherapy drug codes' = "Pharmacotherapy drug codes",
-                                             'Prednisolone'="Prednisolone drug codes",
-                                             'Salicylate prescription'="Salicylate prescription codes",
-                                             'Severe asthma drugs'="Severe asthma drug treatment codes",
-                                             'Severe immunosuppresion drugs'="Severe immunosuppression drug codes",
-                                             'Statins' = "Statin codes",
-                                             'Beta-blockers (unlicensed)'="Unlicensed beta-blocker prescription codes")
+gp_cluster_lookup$Cluster_Desc<-
+  fct_recode(gp_cluster_lookup$Cluster_Desc,
+           'ACE' = "Angiotensin-converting enzyme (ACE) inhibitor prescription codes",
+           'ARB' = "Angiotensin II receptor blockers (ARB) prescription codes",
+           'AntiHT'="Antihypertensive medications",
+           'Antipsychotics' ="Antipsychotic drug codes",
+           'Asthma drugs'="Asthma-related drug treatment codes",
+           'Asthma ICS' = "Asthma inhaled corticosteroids codes",
+           'Bone sparing agents' = "Bone sparing agent drug codes",
+           'Bone sparing therapy' = "Bone sparing therapy codes",
+           'COPD drugs' = "Chronic obstructive pulmonary disease (COPD) drug codes",
+           'Clopidogrel drug codes' = "Clopidogrel drug codes",
+           'Clopidogrel prophylaxis codes' = "Clopidogrel prophylaxis codes",
+           'Lithium stopped' = "Code for stopped lithium",
+           'Constipation treatment' = "Constipation treatment codes",
+           'Steroids'="Corticosteroid drug codes",
+           'Diabetes drugs' = "Diabetes mellitus drugs codes",
+           'Dipyridamole'="Dipyridamole prescription codes",
+           'Epilepsy drugs' = "Drug treatment for epilepsy",
+           'Ezetimibe' = "Ezetimibe drug codes",
+           'Flu vaccine'="Flu vaccine drug codes",
+           'Hypothiroidism drugs' = "Hypothyroidism treatment codes",
+           'Immunossuppresion drugs'="Immunosuppression drugs",
+           'Beta-blockers (licensed)'="Licensed beta-blocker prescription codes",
+           'Lithium'="Lithium prescription codes",
+           'Metformin'="Metformin drug codes",
+           'Oral anticoagulation drugs'="Oral anticoagulant drug codes",
+           'Oral anticoagulation prophylaxis'="Oral anticoagulant prophylaxis codes",
+           'OTC salicylate'="Over the counter (OTC) salicylate codes",
+           'Pharmacotherapy codes'="Pharmacotherapy codes",
+           'Pharmacotherapy drug codes' = "Pharmacotherapy drug codes",
+           'Prednisolone'="Prednisolone drug codes",
+           'Salicylate prescription'="Salicylate prescription codes",
+           'Severe asthma drugs'="Severe asthma drug treatment codes",
+           'Severe immunosuppresion drugs'="Severe immunosuppression drug codes",
+           'Statins' = "Statin codes",
+           'Beta-blockers (unlicensed)'="Unlicensed beta-blocker prescription codes",
+           'Other COVID-19 codes' = "Codes required for COVID-19 pandemic planning and research not included within associated clusters from other services to be returned with no time limit",
+           'Men B vaccine (booster)' = "Booster Men B vaccination codes",
+           'Men B vaccine (booster, other providers)'= "Booster Men B vaccination codes by another healthcare provider",
+           'Hepatitis B vaccine (complete)' = "Codes for the completing Hepatitis B vaccination dose",
+           'Hepatitis B vaccine (first dose)' = "First hepatitis B vaccination codes",
+           'Men B vaccine (first dose)' = "First Men B vaccination codes",
+           'Men B vaccine (first dose, other providers)' ="First Men B vaccination codes by another healthcare provider",
+           'Flu vaccine' = "Flu vaccination codes",
+           'HibMenC vaccination'="Haemophilus influenzae type B Meningitis C (HibMenC) vaccination codes",
+           'HPV vaccine' = "HPV vaccination codes",
+           'Intranasal influenza vaccine (first dose, other provider)' = "Intranasal seasonal influenza vaccination first dose given by other healthcare provider codes",
+           'Intranasal influenza vaccine (second dose, othe provider)'= "Intranasal seasonal influenza vaccination second dose given by other healthcare provider codes",
+           'Intranasal influenza vaccine (first dose)' = "Intranasal seasonal influenza vaccine first dose given codes",
+           'Intranasal influenza vaccine (second dose)' = "Intranasal seasonal influenza vaccine second dose codes",
+           'Long term indication for influenza vaccination' = "Long term indication for seasonal influenza vaccination codes",
+           'Men B vaccine' = "Men B vaccine drug codes",
+           'MenACWY vaccine (GP)' = "MenACWY GP vaccination codes",
+           'MenACWY vaccine (other provider)'="MenACWY other healthcare provider vaccination codes",
+           'MenACWY vaccine' = "MenACWY vaccine codes",
+           'MMR vaccine (first dose)'="MMR first dose vaccination codes",
+           'MMR vaccine (second dose)'="MMR second dose vaccination codes",
+           'MMR vaccine' = "MMR vaccine codes",
+           'Pertussis vaccine in pregnancy'="Pertussis vaccination in pregnancy codes",
+           'Pertussis vaccine in pregnancy (other provider)' = "Pertussis vaccination in pregnancy given by other healthcare provider codes",
+           'Pneumococcal (PCV) vaccine' = "Pneumococcal (PCV) vaccination codes",
+           'Pneumococcal vaccine' = "Pneumococcal vaccination codes",
+           'Pneumococcal vaccine (other provider)' = "Pneumococcal vaccination given by other healthcare provider codes",
+           'Pneumococcal vaccine (drug codes)'="Pneumococcal vaccine drug codes",
+           'Requires pneumococcal vaccine'="Requires pneumococcal vaccination codes",
+           'Rotavirus vaccine (first dose)'="Rotavirus vaccination 1st dose given codes",
+           'Rotavirus vaccine (second dose)'="Rotavirus vaccination 2nd dose given codes",
+           'Influenza inactivated vaccine'="Seasonal influenza inactivated vaccine codes",
+           'Influenza inactivated vaccine (first dose)' ="Seasonal influenza inactivated vaccine first dose codes",
+           'Influenza inactivated vaccine (first dose, other provider)'="Seasonal influenza inactivated vaccine first dose given by other healthcare provider codes",
+           'Influenza inactivated vaccine (second dose)' = "Seasonal influenza inactivated vaccine second dose codes",
+           'Influenza inactivated vaccine (second dose, other provider)'="Seasonal influenza inactivated vaccine second dose given by other healthcare provider codes",
+           'Hepatitis B vaccine (second dose)' = "Second hepatitis B vaccination codes",
+           'Men B vaccine (second dsoe)' = "Second Men B vaccination codes",
+           'Men B vaccine (second dose, other provider)'="Second Men B vaccination codes by another healthcare provider",
+           'Shingles vaccine (GP)' = "Shingles GP vaccination codes",
+           'Shingles vaccine (other provider)'="Shingles other healthcare provider vaccination codes",
+           'Shingles vaccine (first dose)'= "Shingles vaccine first dose codes",
+           'Shingles vaccine (second dose)'="Shingles vaccine second dose codes")
 
+gp_cluster_lookup$Cluster_Desc<-as.character(gp_cluster_lookup$Cluster_Desc)
 
 
 ## load SNOMED FSN (fully-specified names) to inspect GP dataset-------
@@ -1709,14 +1755,14 @@ rm(a, date_diff_table, date_diff_table1, plot, plot1, plot2, x)
 
 
 
-## code ------
+### code ------
 
 gp%>%
   skim(code)
   # 4603 missing, 0.05% of total
 
 
-### compute counts per cluster category -----------------
+#### compute counts per cluster category -----------------
 x<- gp%>%
   select(study_number, code, date)%>%
   mutate(year=str_sub(date, 1, 4), .keep="unused")%>%
@@ -1770,7 +1816,7 @@ ggsave("Outputs/Transfer/Figures/cluster_categories_entries_timeseries.png",
        )
 
 
-### build table with counts of different things per cluster category ----------------
+#### build table with counts of different things per cluster category ----------------
 cluster_category_table<-
   gp%>%
   select(study_number, code, date)%>%
@@ -1816,9 +1862,9 @@ rm(x,cluster_category_table, cluster_category_table_1)
 
 
 
-### investigate NA cluster codes -----
+#### investigate NA cluster codes -----
 
-#### matching codes to the gp cluster lookup -----
+#### matching codes to the gp cluster lookup
 
 a<- gp%>%
   select(study_number, code, date)%>%
@@ -1849,7 +1895,7 @@ a%>%
 
 # are these actually snomed codes? 
 
-#### check snomed concept list --------
+#### check snomed concept list
 
 a1<-gp%>%
   select(study_number, code, date)%>%
@@ -1870,7 +1916,7 @@ a1%>%
   nrow()
 # 700 codes; so 5 codes are actually snomed codes; can we determine their meaning? 
 
-#### check SNOMED FSN list ------
+#### check SNOMED FSN list
 FSN%>%
   filter(conceptId %in% x)%>%
   distinct(conceptId, .keep_all=T)%>%
@@ -1897,7 +1943,7 @@ FSN%>%
 
 # what are the remaining? they are not in the complete snomed concept list, but we can look in the full list of snomed descriptions for confirmation
 
-#### check snomed descriptions -------
+#### check snomed descriptions
 
 snomed_descriptions%>%
   filter(conceptId %in% setdiff(x, x1))%>%
@@ -1931,14 +1977,7 @@ gp%>%
 
 
 
-
-
-
-
-
-
-
-#### non-matched codes along time ---------
+#### non-matched codes along time
 a%>%
   select(study_number, code, date)%>% # some variables
   mutate(year=str_sub(date, 1,4))%>% # generate year from date
@@ -1955,7 +1994,7 @@ ggsave("Outputs/Transfer/Figures/unmatched_codes_timeseries.png",
        last_plot()) # saving plot
 
 
-#### unmatched codes across GP suppliers --------
+#### unmatched codes across GP suppliers
 
 a%>%
   select(study_number, code, date, gp_system_supplier)%>% #some variables
@@ -1974,7 +2013,7 @@ ggsave("Outputs/Transfer/Figures/unmatched_codes_gp_supplier.png",
        last_plot()
 )
 
-#### map of unmatched codes---------
+#### map of unmatched codes
 
 
 # load lsoa to LAD map (as above)
@@ -2070,7 +2109,7 @@ rm(x, x1, y, a, a1, counties, county_counts, filename, lad_county, lsoa_lad, map
 
 
 
-### investigate the "To be confirmed" cluster --------
+#### investigate the "To be confirmed" cluster --------
 x2<-gp%>%
   left_join(gp_cluster_lookup, by=c("code"= "ConceptId"))%>%
   filter(Cluster_Category=="To be confirmed")%>%
@@ -2105,15 +2144,15 @@ gc()
 
 
 
-## sensitive_code -----
+### sensitive_code -----
 
-### general investigation -----
+#### general investigation -----
 gp%>%
   skim(sensitive_code)
 
 table(gp$sensitive_code)
 
-### plot of coding ------
+#### plot of coding ------
 
 gp%>%
   select(sensitive_code)%>%
@@ -2135,9 +2174,9 @@ ggsave("Outputs/Transfer/Figures/sensitive_code.png",
        width = 10,
        dpi="retina")
 
-## episode_condition -----
+### episode_condition -----
 
-### general investigation -------
+#### general investigation -------
 
 gp%>%
   skim(episode_condition)
@@ -2152,7 +2191,7 @@ levels(gp$episode_condition)<-list('Cause of death' = "D",
                                 Other = "O")
 
 
-### plot of coding of this field ------
+#### plot of coding of this field ------
 gp%>%
   select(episode_condition)%>%
   group_by(episode_condition)%>%
@@ -2173,7 +2212,7 @@ ggsave("Outputs/Transfer/Figures/episode_condition_coding.png",
        dpi="retina")
 
 
-### plot of coding along time -----
+#### plot of coding along time -----
 x<-gp%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
   filter(Cluster_Category!="Medications")%>%
@@ -2204,7 +2243,7 @@ ggsave("Outputs/Transfer/Figures/episode_condition_timeseries.png",
        width = 20,
        dpi="retina")
 
-### plot of coding per cluster category ------
+#### plot of coding per cluster category ------
 x<-gp%>%
   select(episode_condition, code)%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
@@ -2236,7 +2275,7 @@ ggsave("Outputs/Transfer/Figures/episode_condition_per_cluster_category.png",
        dpi="retina")
 
 
-### plot per gp supplier ---------
+#### plot per gp supplier ---------
 
 gp%>%
   select(study_number, code, episode_condition, gp_system_supplier, date)%>%
@@ -2269,7 +2308,7 @@ ggsave("Outputs/Transfer/Figures/episode_condition_gp_supplier.png",
 
 
 
-### investigate some individual cases for each type of entry -----
+#### investigate some individual cases for each type of entry -----
 gp%>%
   filter(episode_condition=="New")%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
@@ -2309,9 +2348,9 @@ rm(x)
 
 
 
-## episode_prescription ------
+### episode_prescription ------
 
-### general investigation ----
+#### general investigation ----
 gp%>%
   skim(episode_prescription)
 
@@ -2332,7 +2371,7 @@ gp%<>%
 levels(gp$episode_prescription)<-list('Acute (one-off)' = "A",
                                    'Issue of repeat' = "I")
 
-### plot of coding frequency --------
+#### plot of coding frequency --------
 gp%>%
   select(episode_prescription)%>%
   group_by(episode_prescription)%>%
@@ -2354,7 +2393,7 @@ ggsave("Outputs/Transfer/Figures/episode_prescription_coding.png",
        dpi="retina")
 
 
-### plot of coding per cluster category ------
+#### plot of coding per cluster category ------
 x<-gp%>%
   select(episode_prescription, code)%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
@@ -2386,7 +2425,7 @@ ggsave("Outputs/Transfer/Figures/episode_prescription_per_cluster_category.png",
        width = 20,
        dpi="retina")
 
-### plot of coding along time (overall)-----
+#### plot of coding along time (overall)-----
 x<-gp%>%
   select(episode_prescription, date)%>%
   mutate(year=str_sub(date, 1,4))%>%
@@ -2412,7 +2451,7 @@ ggsave("Outputs/Transfer/Figures/episode_prescription_timeseries.png",
        width = 20,
        dpi="retina")
 
-### plot of coding along time (for medication clusters only) -----
+#### plot of coding along time (for medication clusters only) -----
 x<-gp%>%
   select(episode_prescription, date, code)%>%
   mutate(year=str_sub(date, 1,4))%>%
@@ -2441,7 +2480,7 @@ ggsave("Outputs/Transfer/Figures/episode_prescription_timeseries_medication_clus
        width = 20,
        dpi="retina")
 
-### plot of coding per medication cluster -----
+#### plot of coding per medication cluster -----
 x<-gp%>%
   select(episode_prescription, code)%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
@@ -2483,7 +2522,7 @@ ggsave("Outputs/Transfer/Figures/episode_prescription_per_medication_cluster.png
        width = 20,
        dpi="retina")
 
-### plot of coding for other clusters of interest -----
+#### plot of coding for other clusters of interest -----
 
 # reload gp_cluster_lookup because previous change to medication cluster names caused some unwanted changes in other cluster names
 
@@ -2596,7 +2635,7 @@ ggsave("Outputs/Transfer/Figures/episode_prescription_other_clusters.png",
 
 
 
-### plot of mean entries per participant for each cluster -------
+#### plot of mean entries per participant for each cluster -------
 
 x<- gp%>%
   select(study_number, date, code, episode_prescription)%>%
@@ -2635,7 +2674,7 @@ ggsave("Outputs/Transfer/Figures/episode_prescription_per_medication_cluster(per
        width = 20,
        dpi="retina")
 
-### plot of mean distinct entries and proportion of participants with distrinct entries per cluster ----
+#### plot of mean distinct entries and proportion of participants with distrinct entries per cluster ----
 
 x<-gp%>%
   select(study_number, code, episode_prescription, gp_system_supplier, date)%>%
@@ -2707,7 +2746,7 @@ ggsave('Outputs/Transfer/Figures/distinct_entries_episode_prescription.png',
 
 rm(x,x1,x2, p1,p2, plot)
 
-### example row for a participant with two distinct entries in episode_prescription for the same medication cluster ----
+#### example row for a participant with two distinct entries in episode_prescription for the same medication cluster ----
 
 gp%>%
   filter(study_number=="1392975")%>%
@@ -2729,7 +2768,7 @@ write_csv(t, "Outputs/Transfer/Tables/sample_episode_prescription.csv")
 
 rm(t)
 
-### plot per gp provider ------
+#### plot per gp provider ------
 gp%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
   select(study_number, code, episode_prescription, gp_system_supplier, date, Cluster_Category)%>%
@@ -2762,8 +2801,8 @@ ggsave("Outputs/Transfer/Figures/episode_prescription_gp_supplier.png",
 
 rm(x,t,x1)
 
-### investigate time relationship between first and issue of repeat/NAs -----
-#### (STILL IN PROGRESS)-----
+#### investigate time relationship between first and issue of repeat/NAs -----
+#### (STILL IN PROGRESS)
 
 x<-gp%>%
   select(study_number, 
@@ -2795,9 +2834,9 @@ x<-gp%>%
 rm(x, x1)
 
 
-## value1_condition and value2_condition--------
+### value1_condition and value2_condition--------
 
-### general inspection -------
+#### general inspection -------
 
 a<-gp%>%
   skim(value1_condition, value2_condition)
@@ -2805,7 +2844,7 @@ a<-gp%>%
 # missing: 9811917 for value 2 (complete: 9908044 - 9811917 = 96127; 0.97%)
 
 
-### descriptive summaries --------
+#### descriptive summaries --------
 a%>%
   as.data.frame()%>%
   rename(nmissing =n_missing,
@@ -2841,7 +2880,7 @@ gp%>%
          value2_condition_flag = if_else(!is.na(value2_condition), 1, 0))%>%
   count(value1_condition_flag, value2_condition_flag)
 
-### histograms -------
+#### histograms -------
 
 
 x<-gp_dt%>%
@@ -2912,7 +2951,7 @@ ggsave('Outputs/Transfer/Figures/value1_condition_and_value2_condition_histogram
 rm(p,p1,p2, x1)
 
 
-### coding along time and per supplier -------
+#### coding along time and per supplier -------
 
 x%>%
   select(date, gp_system_supplier, value, group)%>%
@@ -2943,9 +2982,9 @@ ggsave('Outputs/Transfer/Figures/value1_condition_and_value2_condition_timeserie
        dpi="retina")
 
 
-### codes associated -----
+#### codes associated -----
 
-#### value1_condition -------
+#### value1_condition
 x1<-x%>%
   filter(!is.na(value1_condition))
   
@@ -3042,7 +3081,7 @@ View(t)
 
 
 
-#### value2_condition -------
+#### value2_condition
 
 x2<-x%>%
   filter(!is.na(value2_condition))%>%
@@ -3066,14 +3105,14 @@ write_csv(t2, "Outputs/Transfer/Tables/value2_condition_codes.csv")
 rm(x2,t2)  
   
   
-## value1_prescription and value2_prescription-------
+### value1_prescription and value2_prescription-------
 
-### general inspection  ------
+#### general inspection  ------
 
 gp_dt%>%
   skim(value1_prescription, value2_prescription)
 
-### descriptive summaries ------
+#### descriptive summaries ------
 
 a<-gp_dt%>%
   skim(value1_prescription, value2_prescription)
@@ -3109,7 +3148,7 @@ gp_dt%>%
 
 
 
-### histograms -----
+#### histograms -----
 
 x<-gp_dt%>%
   select(code, date, value1_prescription, value2_prescription, gp_system_supplier)%>%
@@ -3179,7 +3218,7 @@ ggsave('Outputs/Transfer/Figures/value1_prescription_and_value2_prescription_his
 rm(p,p1,p2, x1)
 
 
-### coding along time and per supplier -------
+#### coding along time and per supplier -------
 
 x<-gp_dt%>%
   filter(!is.na(value1_prescription)|
@@ -3226,30 +3265,158 @@ ggsave('Outputs/Transfer/Figures/value1_prescription_and_value2_prescription_tim
 
 rm(x)
 
-### codes associated ------
+#### codes associated ------
 
-#### value1_condition -------
+#### value1_prescription
+
+# no gp
 gp_dt%>%
   filter(!is.na(value1_prescription))%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
   select(Cluster_Desc, Cluster_Category, value1_prescription)%>%
+  filter(Cluster_Category=="Medications"|is.na(Cluster_Category)|Cluster_Category=="Vaccinations and immunisations"|Cluster_Category=="To be confirmed")%>%
+  mutate(Cluster_Desc==as.character(Cluster_Desc))%>%
   as_tibble()%>%
-  filter(Cluster_Category=="Medications"|is.na(Cluster_Category)|Cluster_Category=="Vaccinations and immunisations")%>%
-  ggplot(aes(x=value1_prescription, y=fct_rev(Cluster_Desc), fill=Cluster_Desc))+
-  geom_density_ridges(scale=1)+
-  scale_x_continuous(limits=c(0,550), breaks=c(0,7,28, 56, 100,120,200,240,300,400,500,600))+
+  ggplot(aes(x=value1_prescription, y=fct_rev(reorder(Cluster_Desc, Cluster_Desc)), fill=Cluster_Desc))+
+  geom_density_ridges(scale=0.8)+
+  scale_x_continuous(limits=c(-2,550), breaks=c(0,7,28, 56, 100,120,200,240,300,400,500,600),expand = c(0,0))+
   theme_gray(base_size=20)+
   theme(legend.position = "none")+
-  labs(title="Coding of Value1_prescription for medication clusters",
+  labs(title="Coding of Value1_prescription for medication and vaccination clusters",
        caption="Plot capped at 550",
        y="Cluster")+
   geom_vline(xintercept=c(7,28,56,120,200,240), linetype="dashed")
 
-ggsave('Outputs/Transfer/Figures/value1_prescription_medication_clusters.png', 
+ggsave('Outputs/Transfer/Figures/value1_prescription_medication_clusters_no_gp.png', 
        last_plot(),
        height=10,
        width=20,
        dpi="retina")
+
+# with gp
+gp_dt%>%
+  filter(!is.na(value1_prescription))%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  select(Cluster_Desc, Cluster_Category, value1_prescription, gp_system_supplier)%>%
+  as_tibble()%>%
+  filter(Cluster_Category=="Medications"|is.na(Cluster_Category)|Cluster_Category=="Vaccinations and immunisations"|Cluster_Category=="To be confirmed")%>%
+  ggplot(aes(x=value1_prescription, y=fct_rev(Cluster_Desc), fill=gp_system_supplier))+
+  geom_density_ridges(scale=0.8, alpha=0.5)+
+  scale_x_continuous(limits=c(-2,550), breaks=c(0,7,28, 56, 100,120,200,240,300,400,500,600),expand = c(0,0))+
+  theme_gray(base_size=20)+
+  theme(legend.position = "right")+
+  labs(title="Coding of Value1_prescription for medication and vaccination clusters",
+       caption="Plot capped at 550",
+       subtitle="(per GP system supplier)",
+       y="Cluster")+
+  geom_vline(xintercept=c(7,28,56,120,200,240), linetype="dashed")+
+  guides(fill=guide_legend(title="GP system supplier"))+
+  scale_fill_manual(values=c("#7CAE00","#F8766D", "#C77CFF","#00BFC4"))
+
+ggsave('Outputs/Transfer/Figures/value1_prescription_medication_clusters_with_gp.png', 
+       last_plot(),
+       height=10,
+       width=20,
+       dpi="retina")
+
+
+#### value2_prescription
+
+# no gp supplier
+gp_dt%>%
+  filter(!is.na(value2_prescription))%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  select(Cluster_Desc, Cluster_Category, value2_prescription)%>%
+  as_tibble()%>%
+  filter(Cluster_Category=="Medications"|is.na(Cluster_Category)|Cluster_Category=="Vaccinations and immunisations"|Cluster_Category=="To be confirmed")%>%
+  ggplot(aes(x=value2_prescription, y=fct_rev(Cluster_Desc), fill=Cluster_Desc))+
+  geom_density_ridges(scale=0.8)+
+  theme_gray(base_size=20)+
+  theme(legend.position = "none")+
+  labs(title="Coding of value2_prescription for medication and vaccination clusters",
+       caption="Plot capped at 60",
+       y="Cluster")+
+  scale_x_continuous(limits=c(-2,60), breaks=c(0,1,2,4, 7,14,28,42,56),
+                     expand = c(0,0))+
+  geom_vline(xintercept=c(0,1,2,4, 7,14,28,42,56), linetype="dashed")
+
+ggsave('Outputs/Transfer/Figures/value2_prescription_medication_clusters_no_gp.png', 
+       last_plot(),
+       height=10,
+       width=20,
+       dpi="retina")
+
+# with gp supplier
+gp_dt%>%
+  filter(!is.na(value2_prescription))%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  select(Cluster_Desc, Cluster_Category, value2_prescription, gp_system_supplier)%>%
+  filter(Cluster_Category=="Medications"|is.na(Cluster_Category)|Cluster_Category=="Vaccinations and immunisations"|Cluster_Category=="To be confirmed")%>%
+  as_tibble()%>%
+  ggplot(aes(x=value2_prescription, y=fct_rev(Cluster_Desc), fill=gp_system_supplier))+
+  geom_density_ridges(scale=0.8, alpha=0.5)+
+  theme_gray(base_size=20)+
+  theme(legend.position = "right")+
+  labs(title="Coding of value2_prescription for medication and vaccination clusters",
+       subtitle="(per GP system supplier)",
+       caption="Plot capped at 60",
+       y="Cluster")+
+  scale_x_continuous(limits=c(-2,60), breaks=c(0,1,2,4, 7,14,28,42,56),
+                     expand = c(0,0))+
+  geom_vline(xintercept=c(1,2,4, 7,14,28,42,56), linetype="dashed")+
+  guides(fill=guide_legend(title="GP system supplier"))
+  
+ggsave('Outputs/Transfer/Figures/value2_prescription_medication_clusters_with_gp.png', 
+       last_plot(),
+       height=10,
+       width=20,
+       dpi="retina")
+
+rm(x,x1)
+
+#### completeness per cluster and gp supplier --------
+
+x<-gp_dt%>%
+  select(study_number,date, code, value1_prescription, value2_prescription, gp_system_supplier)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  select(study_number,date, code, value1_prescription, value2_prescription, gp_system_supplier, Cluster_Desc, Cluster_Category)%>%
+  filter(Cluster_Category=="Medications"|is.na(Cluster_Category)|Cluster_Category=="Vaccinations and immunisations"|Cluster_Category=="To be confirmed")%>%
+  distinct(study_number, date, code, Cluster_Desc, .keep_all=T)%>%
+  group_by(Cluster_Desc, gp_system_supplier)%>%
+  summarise(value1_rate = sum(!is.na(value1_prescription))/n(),
+            value2_rate = sum(!is.na(value2_prescription))/n())%>%
+  mutate(value1_rate=round(value1_rate*100,1),
+         value2_rate=round(value2_rate*100,1))%>%
+  group_by(Cluster_Desc)%>%
+  filter(value1_rate>0|value2_rate>0)%>%
+  as_tibble()
+
+
+x%>%
+  rename(value1_prescription = value1_rate, value2_prescription = value2_rate)%>%
+  pivot_longer(c("value1_prescription", "value2_prescription"), names_to = "key", values_to = "value")%>%
+  ggplot(aes(fct_rev(Cluster_Desc), value, fill=gp_system_supplier))+
+  geom_bar(position="dodge", stat='identity')+
+  facet_grid(cols=vars(key))+
+  theme_gray(base_size = 20)+
+  theme(legend.position = "bottom",
+        axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        axis.title.y = element_blank())+
+  coord_flip()+
+  scale_fill_manual(values=c("#7CAE00","#F8766D", "#C77CFF","#00BFC4"))+
+  labs(title="Completeness rates of value1_prescription and value2_prescription",
+       subtitle="(per medication/vaccination cluster and GP system supplier)",
+       caption ="Clusters with no data for both fields were removed")
+
+ggsave('Outputs/Transfer/Figures/value1_prescription_value2_prescription_completeness_rates_cluster_supplier.png', 
+       last_plot(),
+       height=10,
+       width=20,
+       dpi="retina")
+
+rm(x)
+
 
 
 ## links -------
