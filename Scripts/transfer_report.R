@@ -2911,7 +2911,7 @@ p1<- x%>%
              )+
   geom_vline(data=x1%>%filter(group=="value1_condition"), aes(xintercept = median), col="dark red", linetype="dashed")+
   geom_text(data= x1%>%filter(group=="value1_condition"),
-            mapping = aes(x=median, y=n/10, label=paste0("Median: ", median)),
+            mapping = aes(x=median, y=200000, label=paste0("Median: ", median)),
             hjust=-0.1,
             size=6
   )+
@@ -2932,7 +2932,7 @@ p2<- x%>%
              )+
   geom_vline(data=x1%>%filter(group=="value2_condition"), aes(xintercept = median), col="dark red", linetype="dashed")+
   geom_text(data= x1%>%filter(group=="value2_condition"),
-            mapping = aes(x=median, y=n/10, label=paste0("Median: ", median)),
+            mapping = aes(x=median, y=20000, label=paste0("Median: ", median)),
             hjust=-0.1,
             size=6
   )+
@@ -2951,7 +2951,7 @@ ggsave('Outputs/Transfer/Figures/value1_condition_and_value2_condition_histogram
 rm(p,p1,p2, x1)
 
 
-#### coding along time and per supplier -------
+#### presence of a code along time and per supplier -------
 
 x%>%
   select(date, gp_system_supplier, value, group)%>%
@@ -2981,6 +2981,45 @@ ggsave('Outputs/Transfer/Figures/value1_condition_and_value2_condition_timeserie
        width=20,
        dpi="retina")
 
+#### value of a code along time and per supplier -------
+
+x<-gp_dt%>%
+  select(code, date, value1_condition, value2_condition, gp_system_supplier)%>%
+  pivot_longer(-c(code, date, gp_system_supplier), names_to="group", values_to="value")%>%
+  filter(!is.na(value))
+
+x1<-x%>%
+  mutate(year=str_sub(date,1,4))%>%
+  group_by(year, gp_system_supplier, group)%>%
+  summarise(median=median(value))
+
+
+
+x1%>%
+  as_tibble()%>%
+  mutate(year=as.numeric(year))%>%
+  ggplot(aes(year, median, color=gp_system_supplier, groups=gp_system_supplier, shape=gp_system_supplier))+
+  geom_line()+
+  geom_point()+
+  facet_grid(rows=vars(group))+
+  theme_gray(base_size = 20)+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "bottom",
+        legend.title = element_blank())+
+  labs(title="Median values of value1_condition and value2_condition along time and per system supplier")+
+  ylab("Median")+
+  xlab("Year")+
+  scale_color_manual(values=c("#7CAE00","#F8766D", "#C77CFF","#00BFC4"))
+
+
+
+ggsave('Outputs/Transfer/Figures/value1_condition_and_value2_condition_values_timeseries_suppliers.png', 
+       last_plot(),
+       height=10,
+       width=20,
+       dpi="retina")
+
+rm(x,x1)
 
 #### codes associated -----
 
@@ -3218,7 +3257,7 @@ ggsave('Outputs/Transfer/Figures/value1_prescription_and_value2_prescription_his
 rm(p,p1,p2, x1)
 
 
-#### coding along time and per supplier -------
+#### presence of coding along time and per supplier -------
 
 x<-gp_dt%>%
   filter(!is.na(value1_prescription)|
@@ -3264,6 +3303,111 @@ ggsave('Outputs/Transfer/Figures/value1_prescription_and_value2_prescription_tim
        dpi="retina")
 
 rm(x)
+
+#### number of entries and completeness per cluster and per supplier --------
+x<-gp_dt%>%
+  select(code, value1_prescription, value2_prescription, gp_system_supplier)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  select(code, value1_prescription, value2_prescription, gp_system_supplier, Cluster_Desc, Cluster_Category)%>%
+  filter(Cluster_Category=="Medications"|is.na(Cluster_Category)|Cluster_Category=="Vaccinations and immunisations"|Cluster_Category=="To be confirmed")%>%
+  group_by(Cluster_Desc, gp_system_supplier)%>%
+  add_tally(sum(!is.na(value1_prescription)|!is.na(value2_prescription)))%>%
+  filter(n>0)%>%
+  group_by(Cluster_Desc, gp_system_supplier)%>%
+  summarise(value1_prescriptionXentries=sum(!is.na(value1_prescription)),
+            value2_prescriptionXentries=sum(!is.na(value2_prescription)),
+            value1_prescriptionXcomplete = sum(!is.na(value1_prescription))/n(),
+            value2_prescriptionXcomplete = sum(!is.na(value2_prescription))/n())%>%
+  mutate(value1_prescriptionXcomplete=round(value1_prescriptionXcomplete*100,1),
+         value2_prescriptionXcomplete=round(value2_prescriptionXcomplete*100,1))%>%
+  pivot_longer(c(value1_prescriptionXentries, value2_prescriptionXentries, value1_prescriptionXcomplete, value2_prescriptionXcomplete), names_to="group", values_to="value")%>%
+  as_tibble()%>%
+  separate(group, c("variable", "feature"), sep="X")%>%
+  pivot_wider(id_cols=c(Cluster_Desc, gp_system_supplier, variable), names_from = "feature", values_from = "value")
+
+
+x%>%
+  ggplot(aes(entries, complete, color=Cluster_Desc))+
+  geom_point(size=5, alpha=0.5)+
+  theme_gray(base_size=20)+
+  facet_grid(rows=vars(variable),
+             cols=vars(gp_system_supplier))+
+  theme(legend.position = "bottom",
+        legend.title = element_blank())+
+  # geom_text_repel(data=(x%>%
+  #                         filter(complete==0 & 
+  #                                   gp_system_supplier%in%c("TPP", "EMIS"))),
+  #                 aes(label=Cluster_Desc),
+  #                 max.overlaps = 100,
+  #                 show.legend = F,
+  #                 size=6,
+  #                 direction = "y")+
+  labs(title="Number of entries and completeness rates for value1_prescription and value2_prescription",
+       subtitle="(per medication/vaccination cluster and GP system supplier)",
+       y="Completeness rate",
+       x="Number of entries")
+  
+ggsave('Outputs/Transfer/Figures/value1_prescription_and_value2_prescription_entries_completeness_clusters_suppliers.png', 
+       last_plot(),
+       height=10,
+       width=20,
+       dpi="retina")
+
+
+
+
+#### value of a code along time and per supplier -------
+# (IN PROGRESS)
+
+x<-gp_dt%>%
+  select(code, date, value1_prescription, value2_prescription, gp_system_supplier)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  select(code, date, value1_prescription, value2_prescription, gp_system_supplier, Cluster_Desc, Cluster_Category)%>%
+  filter(Cluster_Category=="Medications"|is.na(Cluster_Category)|Cluster_Category=="Vaccinations and immunisations"|Cluster_Category=="To be confirmed")%>%
+  filter(!is.na(value1_prescription)|!is.na(value2_prescription))%>%
+  mutate(year=str_sub(date, 1, 4))%>%
+  group_by(year, Cluster_Desc, gp_system_supplier)%>%
+  summarise(value1_prescription=median(value1_prescription),
+            value2_prescription=median(value2_prescription))%>%
+  pivot_longer(c(value1_prescription, value2_prescription), names_to="group", values_to="value")
+
+x%>%
+  filter(group=="value1_prescription")%>%
+  as_tibble()%>%
+  mutate(year=as.numeric(year),
+         Cluster_Desc=as.character(Cluster_Desc))%>%
+  ggplot(aes(year, value, color=Cluster_Desc))+
+  geom_line()+
+  geom_point()+
+  facet_wrap(~gp_system_supplier,
+             scales="free")+
+  theme_gray(base_size = 20)+
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank())+
+  labs(title="Median values of value1_condition along time and per system supplier")+
+  ylab("Median")+
+  xlab("Year")
+
+
++
+  scale_color_manual(values=c("#7CAE00","#F8766D", "#C77CFF","#00BFC4"))
+
+
+
+ggsave('Outputs/Transfer/Figures/value1_condition_and_value2_condition_values_timeseries_suppliers.png', 
+       last_plot(),
+       height=10,
+       width=20,
+       dpi="retina")
+
+rm(x,x1)
+
+
+
+
+
 
 #### codes associated ------
 
@@ -3373,50 +3517,6 @@ ggsave('Outputs/Transfer/Figures/value2_prescription_medication_clusters_with_gp
        dpi="retina")
 
 rm(x,x1)
-
-#### completeness per cluster and gp supplier --------
-
-x<-gp_dt%>%
-  select(study_number,date, code, value1_prescription, value2_prescription, gp_system_supplier)%>%
-  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
-  select(study_number,date, code, value1_prescription, value2_prescription, gp_system_supplier, Cluster_Desc, Cluster_Category)%>%
-  filter(Cluster_Category=="Medications"|is.na(Cluster_Category)|Cluster_Category=="Vaccinations and immunisations"|Cluster_Category=="To be confirmed")%>%
-  distinct(study_number, date, code, Cluster_Desc, .keep_all=T)%>%
-  group_by(Cluster_Desc, gp_system_supplier)%>%
-  summarise(value1_rate = sum(!is.na(value1_prescription))/n(),
-            value2_rate = sum(!is.na(value2_prescription))/n())%>%
-  mutate(value1_rate=round(value1_rate*100,1),
-         value2_rate=round(value2_rate*100,1))%>%
-  group_by(Cluster_Desc)%>%
-  filter(value1_rate>0|value2_rate>0)%>%
-  as_tibble()
-
-
-x%>%
-  rename(value1_prescription = value1_rate, value2_prescription = value2_rate)%>%
-  pivot_longer(c("value1_prescription", "value2_prescription"), names_to = "key", values_to = "value")%>%
-  ggplot(aes(fct_rev(Cluster_Desc), value, fill=gp_system_supplier))+
-  geom_bar(position="dodge", stat='identity')+
-  facet_grid(cols=vars(key))+
-  theme_gray(base_size = 20)+
-  theme(legend.position = "bottom",
-        axis.title.x = element_blank(),
-        legend.title = element_blank(),
-        axis.title.y = element_blank())+
-  coord_flip()+
-  scale_fill_manual(values=c("#7CAE00","#F8766D", "#C77CFF","#00BFC4"))+
-  labs(title="Completeness rates of value1_prescription and value2_prescription",
-       subtitle="(per medication/vaccination cluster and GP system supplier)",
-       caption ="Clusters with no data for both fields were removed")
-
-ggsave('Outputs/Transfer/Figures/value1_prescription_value2_prescription_completeness_rates_cluster_supplier.png', 
-       last_plot(),
-       height=10,
-       width=20,
-       dpi="retina")
-
-rm(x)
-
 
 
 ## links -------
