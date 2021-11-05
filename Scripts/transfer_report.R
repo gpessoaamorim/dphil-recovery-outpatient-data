@@ -3532,7 +3532,6 @@ ggsave('Outputs/Transfer/Figures/value1_prescription_and_value2_prescription_ent
 
 
 #### value of a code along time and per supplier -------
-# (IN PROGRESS)
 
 x1<-gp_dt%>%
   select(code, date, value1_prescription, gp_system_supplier)%>%
