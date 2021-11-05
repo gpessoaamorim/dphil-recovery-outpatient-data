@@ -42,7 +42,8 @@ library(tidytext) # reordering characters acording to a grouping variable (for p
 library(ggdark) # themes for ggplot 
 library(ggthemes) # themes for ggplot 
 # library(plotly) # generate interactive plots (for inspection of individual points); commented as only needed ad hoc
-
+library(ggh4x) # additional functions to manipulate facets in ggplot
+library(ggalluvial) # river plots in ggplot
   
 # set working directory
 setwd("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/DPhil_RECOVERY")
@@ -115,6 +116,9 @@ rand_dates <- read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/REC
 
 ## import list of withdrawn participants ------------------
 withdrew<- read_excel("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Input datasets/RECOVERY Consent Withdrawn 2021-10-08.xlsx", col_types = c("text", "skip", "skip", "skip", "skip", "skip", "skip", "skip","skip", "skip", "skip", "skip"))%>%.[[1]]
+
+
+# Import lookup tools---------
 
 ## load GP cluster list to retrieve clusters and code descriptions---------------
 gp_cluster_lookup <-read_excel("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/GDPPR_Cluster_refset_1000230_20210914.xlsx")
@@ -218,7 +222,7 @@ FSN <- read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_g
 ## load entire list of SNOMED concepts that ever existed -------
 #(28 October 2020 release)
 
-snomed_concepts<-read_csv("Tools/SNOMED terminology/Aggregated/rdiagnosislist/concepts.csv", col_types = cols(id = col_character(), moduleId = col_character(), definitionStatusId = col_character()))
+snomed_concepts<-read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/SNOMED terminology/Aggregated/rdiagnosislist/concepts.csv", col_types = cols(id = col_character(), moduleId = col_character(), definitionStatusId = col_character()))
 
 
 
@@ -226,12 +230,6 @@ snomed_concepts<-read_csv("Tools/SNOMED terminology/Aggregated/rdiagnosislist/co
 #(28 October 2020 release)
 
 snomed_descriptions<-read_csv("Tools/SNOMED terminology/Aggregated/rdiagnosislist/descriptions.csv", col_types = cols(Id = col_character(), moduleId = col_character(), conceptId = col_character(), typeId = col_character(), caseSignificanceId = col_character()))
-
-
-
-
-
-
 
 
 # Load RECOVERY drug codelists ------------------
@@ -644,6 +642,7 @@ gp%>%
 
 table(gp$sex, useNA = c("always"))
 
+#### general plot -------
 plot_labels<-c("Unknown", "Male")
 
 p<-gp%>%
@@ -660,6 +659,45 @@ ggsave("Outputs/Transfer/Figures/Sex_counts.png",
        p)
 
 rm(plot_labels, p)
+
+#### plot per supplier -------
+
+x<- gp_dt%>%
+  select(study_number, sex, gp_system_supplier)%>%
+  group_by(study_number,gp_system_supplier)%>%
+  add_count(sex, name= "participants")%>%
+  ungroup()%>%
+  group_by(gp_system_supplier)%>%
+  add_count(sex, name="entries")
+
+x%>%
+  distinct(sex, gp_system_supplier, .keep_all=T)%>%
+  select(-study_number)->x1
+
+plot_labels<-c("Unknown", "Male")
+
+x1%>%
+  pivot_longer(c(participants, entries), names_to = "key", values_to = "value")%>%
+  as_tibble()%>%
+  ggplot(aes(sex, value, fill=key))+
+  geom_bar(stat='identity')+
+  geom_text(stat='identity', aes(label=value), vjust=-1, size=6)+
+  scale_x_discrete(labels=c("Unknown", "Male"))+
+  facet_grid(cols=vars(gp_system_supplier),
+             rows=vars(key),
+             scales="free_y")+
+  theme_gray(base_size=20)+
+  labs(title="Coding of the sex field, per GP system supplier",
+       y="Number")+
+  theme(legend.position = "none")+
+  scale_y_continuous(expand=expansion(c(0,0.3)))
+  
+ggsave("Outputs/Transfer/Figures/sex_per_gp_supplier.png",
+       last_plot(),
+       width=20,
+       height=8,
+       dpi="retina")
+
 
 
 ### lsoa-----
@@ -1327,22 +1365,36 @@ ggsave("Outputs/Transfer/Figures/record_date_timeseries.png",
 
 # generate date difference table
 date_diff_table<-
-  gp%>%
+  gp_dt%>%
   select(date, record_date)%>%
   mutate(date_difference=as.numeric(difftime(record_date, date, units="days")))
+
+
+
+
 
 #### plot for date vs record_date-----
 date_diff_table%>%
   # filter(date_difference!=0)%>%
+  as_tibble()%>%
   ggplot()+
   geom_abline(intercept = 0, slope=1, colour="dark red", size=1.1)+
-  # geom_vline(xintercept = as.numeric("1900-01-01"), colour="dark red", size=1.1, na.rm=T)+
-  # geom_hline(yintercept = as.numeric("1900-01-01"), colour="dark red", size=1.1, na.rm=T)+
-  stat_binhex(aes(date, record_date), bins=100, colour="black")+
-  scale_fill_gradientn(colours=c("light blue", "blue"), name="Frequency", na.value=NA)
-
+  stat_binhex(aes(date, record_date), bins=20, colour="black")+
+  geom_text(stat="binhex", bins=20, aes(date, record_date, label=..count..), show.legend = F, color="white")+
+  theme_gray(base_size=20)+
+  labs(title="Hexagonal density plot for date vs record_date",
+       caption="Numbers in each bin depict entry count")+
+  theme(legend.position = "none")
+  
 ggsave("Outputs/Transfer/Figures/date_vs_record_date_scatter.png",
-       last_plot())
+       last_plot(),
+       width=15,
+       height=8, 
+       dpi="retina")
+
+
+
+
 
 #### plot for date_difference -----
 date_diff_table1<-
@@ -1364,34 +1416,43 @@ smoothScatter(date_diff_table1,
 
 dev.off()
 
+
+
 # alternative way of plotting this
 date_diff_table%>%
-  mutate(row=row.names(date_diff_table))%>%
+  as_tibble()%>%
+  mutate(row=row.names(as_tibble(date_diff_table)))%>%
   ggplot()+
   stat_binhex(aes(row, y=date_difference), bins=100, colour="black")+
   scale_fill_gradientn(colours=c("light blue", "blue"), name="Frequency", na.value=NA)
 
+
 ####  plots for date and record_date vs date_diff ----
 plot1<-date_diff_table%>%
-  # filter(!date_difference==0)%>%
+  as_tibble()%>%
   ggplot()+
-  stat_binhex(aes(date, date_difference), bins=100, colour="black")+
-  scale_fill_gradientn(colours=c("light blue", "blue"), name="Frequency", na.value=NA)+
-  theme_bw(base_size=10)
+  stat_binhex(aes(date, date_difference), bins=20, colour="black")+
+  geom_text(stat="binhex", bins=20, aes(date, date_difference, label=..count..), show.legend = F, color="white", size=4)+
+  theme_bw(base_size=20)+
+  labs(title="Hexagonal density plot for date difference vs date or record_date",
+       caption="Numbers in each bin depict entry count")+
+  theme(legend.position = "none")
 
 plot2<-date_diff_table%>%
-  # filter(!date_difference==0)%>%
+  as_tibble()%>%
   ggplot()+
-  stat_binhex(aes(record_date, date_difference), bins=100, colour="black")+
-  scale_fill_gradientn(colours=c("light blue", "blue"), name="Frequency", na.value=NA)+
-  theme_bw(base_size=10)
+  stat_binhex(aes(record_date, date_difference), bins=20, colour="black")+
+  geom_text(stat="binhex", bins=20, aes(record_date, date_difference, label=..count..), show.legend = F, color="white", size=4)+
+  theme_bw(base_size=20)+
+  theme(legend.position = "none")
+
 
 plot=plot1/plot2
 
 ggsave("Outputs/Transfer/Figures/record_date_and_date_vs_date_diff_plot.png",
        last_plot(),
-       height = 10,
-       width = 10,
+       height = 15,
+       width = 15,
        dpi="retina")
 
 
@@ -1445,7 +1506,7 @@ rm(date_plot,
    plot1,
    plot2)
 
-#### entries with same date but different record date --------
+#### duplicate entries (same date but different record date) --------
 
 x<- gp_dt%>%
   select(study_number, code, date, record_date, lsoa, gp_system_supplier)%>%
@@ -1480,7 +1541,7 @@ p<- x%>%
   guides(color=guide_legend(title="GP system supplier"))+
   labs(title="Date difference between duplicated entries per record year",
        subtitle="(based on record_date differences for the same entry)",
-       y="Entries",
+       y="Date difference (in days)",
        x="Record year",
        caption="Capped before 1950\nOriginal entry for each record removed from plot"
        )+
@@ -1499,7 +1560,9 @@ rm(p)
 
 # per lsoa
 
-x%>%mutate(lsoa_diff=n_distinct(lsoa))->x1
+x%>%
+  group_by(study_number, code, date)%>%
+  mutate(lsoa_diff=n_distinct(lsoa))->x1
 
 x1%>%filter(lsoa_diff>1)%>%nrow()
 # 289,270 entries have different lsoas
@@ -1543,12 +1606,79 @@ ggsave("Outputs/Transfer/Figures/duplicate_records_timeseries_gp_suppliers_lsoa.
        dpi="retina")
 
 
+# how much of this is different systems for the same location?
+
+x<- gp_dt%>%
+  select(study_number, code, date, record_date, lsoa, gp_system_supplier)%>%
+  group_by(study_number, code, date)%>%
+  distinct(record_date, .keep_all=T)%>% # select each distinct record_date for an enty
+  add_count(study_number, code, date)%>% # compute counts of distinct record_date for each entry
+  filter(n>1)%>% # select entries with duplicates
+  arrange(study_number, code, date)%>% # arrange by study_number, code, and date
+  mutate(date_diff=record_date-lag(record_date, 1L))%>% # calculate date difference for record_date within each duplicate entry
+  group_by(study_number, code, date)%>%
+  mutate(lsoa_diff=n_distinct(lsoa))%>% # count number of distinct lsoas per duplicate entry
+  # filter(lsoa_diff==1)%>% # select only those with one lsoa
+  group_by(study_number, code, date)%>% 
+  mutate(diff_suppliers = n_distinct(gp_system_supplier))%>% # compute number of distinct gp suppliers per entry
+  group_by(study_number, code, date)%>%
+  mutate(entry_number = order(record_date))%>%
+  mutate(diff_suppliers_flag = if_else(diff_suppliers==1, 0,1))%>%
+  mutate(group_id=cur_group_id())%>%
+  select(group_id, entry_number, gp_system_supplier, lsoa_diff)%>%
+  as_tibble()%>%
+  ungroup()%>%
+  select(-c(study_number, code, date))
+
+lsoa_labels <- list(
+  '1' = "Same location",
+  '2' = "2 locations",
+  '3' = "3 locations",
+  '4' = "4 locations")
+
+x%>%
+  filter(entry_number<6)%>%
+  ggplot(aes(y=1,
+             x=entry_number,
+             stratum=gp_system_supplier,
+             alluvium=group_id,
+             fill=gp_system_supplier))+
+  geom_flow()+
+  geom_stratum(na.rm=T)+
+  # geom_text(stat = "stratum", aes(label = after_stat(stratum)))+
+  facet_wrap(~lsoa_diff, scales="free",
+             labeller = as_labeller(lsoa_labels))+
+  labs(title="Distribution of duplicate entries",
+       subtitle="(per GP system supplier, and per number of different locations recorded)",
+       y="Number of entries",
+       x="Entry number",
+       caption="Capped at 5 duplicates per entry")+
+  theme_alluvial(base_size=20)+
+  theme(legend.position="bottom",
+        legend.title = element_blank())
 
 
-rm(x,a,x1)
+ggsave("Outputs/Transfer/Figures/duplicates_alluvial_plot.png",
+       last_plot(),
+       width=20,
+       height=8,
+       dpi="retina")
 
 
-### investigate extreme / illogical dates ------
+
+rm(x,x1, x2, lsoa_labels)
+
+
+
+
+
+
+
+
+
+
+
+### investigate some extreme / illogical dates ------
 
 a<- gp%>%
   mutate(year=str_sub(date, 1,4),
@@ -1616,21 +1746,22 @@ ggsave("Outputs/Transfer/Figures/date_after_record_date_cluster_categories.png",
 # investigate those cases in the meds category and after 2000
 
 ## plot of date vs record_date for meds
-gp%>%
+gp_dt%>%
   select(study_number, code, date, record_date)%>%
   arrange(record_date)%>%
-  left_join(FSN, by = c("code"= "conceptId"))%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
   filter(Cluster_Category=="Medications")%>%
-  select(study_number, code, date, record_date, term, Cluster_Category)%>%
+  select(study_number, code, date, record_date, ConceptId_Description, Cluster_Category)%>%
   # mutate(date_difference=difftime(record_date, date, "days"))%>%
+  as_tibble()%>%
   ggplot(aes(record_date, date, group=NULL))+
-  stat_bin_hex(colour="black")+
+  stat_bin_hex(colour="black", bins=20)+
   geom_abline(intercept = 0, slope=1, colour="dark red", size=1.1)+
   theme_gray(base_size=20)+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = "bottom")+
   scale_fill_continuous()+
+  geom_text(stat="binhex", bins=20, aes(record_date, date, label=..count..), show.legend = F, color="white")+
   guides(fill = guide_colorbar(barwidth = unit(15, "cm")))+
   labs(title="Record_date vs date for medications (all time)")
 
@@ -1641,17 +1772,17 @@ ggsave("Outputs/Transfer/Figures/record_date_vs_date_medications.png",
        height=8)
 
 ## plot of date difference vs record_date for meds after 2000
-gp%>%
-  # filter(record_date>="2000-01-01")%>%
+gp_dt%>%
   select(study_number, code, date, record_date)%>%
   arrange(record_date)%>%
-  left_join(FSN, by = c("code"= "conceptId"))%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
   filter(Cluster_Category=="Medications")%>%
-  select(study_number, code, date, record_date, term, Cluster_Category)%>%
+  select(study_number, code, date, record_date, Cluster_Category)%>%
   mutate(date_difference=difftime(record_date, date, units=c("days")))%>%
+  as_tibble()%>%
   ggplot(aes(record_date, date_difference, group=NULL))+
-  stat_bin_hex(colour="black")+
+  stat_bin_hex(colour="black", bins=30)+
+  geom_text(stat="binhex", bins=30, aes(record_date, date_difference, label=..count..), show.legend = F, color="white")+
   geom_hline(yintercept = 0, colour="dark red", size=1.1)+
   theme_gray(base_size=20)+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
@@ -1681,20 +1812,20 @@ gp%>%
   View()
 
 # aggregate per cluster and perform some counts
-x<- gp%>%
+x<- gp_dt%>%
   select(study_number, code, date, record_date)%>%
   arrange(record_date)%>%
-  left_join(FSN, by = c("code"= "conceptId"))%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
   filter(Cluster_Category=="Medications")%>%
-  select(study_number, code, date, record_date, term, Cluster_Desc, Cluster_Category)%>%
+  select(study_number, code, date, record_date, Cluster_Desc, Cluster_Category)%>%
   mutate(date_difference=difftime(record_date, date, units=c("days")))%>%
   filter(date_difference<0)%>%
   mutate(record_year=str_sub(record_date, 1,4))%>%
-  group_by(Cluster_Desc, record_year)%>%
+  group_by(Cluster_Desc, record_year, )%>%
   summarise(entries=n(),
             participants=n_distinct(study_number),
-            average_difference=mean(date_difference))
+            average_difference=mean(date_difference))%>%
+  as_tibble()
 
 
 
@@ -1746,6 +1877,50 @@ ggsave("Outputs/Transfer/Figures/date_vs_record_date_meds_2018_counts.png",
        dpi="retina",
        width=30,
        height=10)
+
+# investigate patterns per gp system supplier
+
+x<- gp_dt%>%
+  select(study_number, code, date, record_date, gp_system_supplier)%>%
+  arrange(record_date)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  filter(Cluster_Category=="Medications")%>%
+  select(study_number, code, date, record_date, Cluster_Desc, Cluster_Category, gp_system_supplier)%>%
+  mutate(date_difference=difftime(record_date, date, units=c("days")))%>%
+  filter(date_difference<0)%>%
+  mutate(record_year=str_sub(record_date, 1,4))%>%
+  group_by(Cluster_Desc, record_year, gp_system_supplier)%>%
+  summarise(entries=n(),
+            participants=n_distinct(study_number),
+            average_difference=mean(date_difference))%>%
+  mutate(average_difference=as.integer(0-average_difference))%>%
+  filter(record_year>=2018)%>%
+  pivot_longer(cols=-c(Cluster_Desc, record_year, gp_system_supplier), names_to="key", values_to="value")
+
+x%>%
+  filter(key=="average_difference")%>%
+  as_tibble()%>%
+  ggplot(aes(record_year, value, group=Cluster_Desc, color=Cluster_Desc))+
+  geom_point()+
+  geom_line()+
+  theme_gray(base_size=20)+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "bottom")+
+  xlab("")+
+  ylab("")+
+  facet_wrap(~gp_system_supplier, scales = "free")+  
+  guides(colour = guide_legend(nrow = 6))+
+  labs(title="Average day difference (date - record_date), number of entries, and participants for medications with date after record_date",
+       subtitle="2018 onwards and difference over 0 days; per GP system supplier")
+
+
+ggsave("Outputs/Transfer/Figures/date_vs_record_date_meds_2018_avg_difference_per_gp_supplier.png",
+       last_plot(),
+       dpi="retina",
+       width=30,
+       height=10)
+
+
 
 # maybe enough of delving into this...
 
@@ -3359,50 +3534,123 @@ ggsave('Outputs/Transfer/Figures/value1_prescription_and_value2_prescription_ent
 #### value of a code along time and per supplier -------
 # (IN PROGRESS)
 
-x<-gp_dt%>%
-  select(code, date, value1_prescription, value2_prescription, gp_system_supplier)%>%
+x1<-gp_dt%>%
+  select(code, date, value1_prescription, gp_system_supplier)%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
-  select(code, date, value1_prescription, value2_prescription, gp_system_supplier, Cluster_Desc, Cluster_Category)%>%
-  filter(Cluster_Category=="Medications"|is.na(Cluster_Category)|Cluster_Category=="Vaccinations and immunisations"|Cluster_Category=="To be confirmed")%>%
-  filter(!is.na(value1_prescription)|!is.na(value2_prescription))%>%
+  select(code, date, value1_prescription, gp_system_supplier, Cluster_Desc, Cluster_Category)%>%
+  filter(Cluster_Category=="Medications")%>%
+  filter(!is.na(value1_prescription))%>%
+  filter(Cluster_Desc!="Flu vaccine")%>%
   mutate(year=str_sub(date, 1, 4))%>%
   group_by(year, Cluster_Desc, gp_system_supplier)%>%
-  summarise(value1_prescription=median(value1_prescription),
-            value2_prescription=median(value2_prescription))%>%
-  pivot_longer(c(value1_prescription, value2_prescription), names_to="group", values_to="value")
+  summarise(median=median(value1_prescription, na.rm = T),
+            n = sum(!is.na(value1_prescription)))
+  
+x2<-gp_dt%>%
+  select(code, date, value2_prescription, gp_system_supplier)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  select(code, date, value2_prescription, gp_system_supplier, Cluster_Desc, Cluster_Category)%>%
+  filter(Cluster_Category=="Medications")%>%
+  filter(!is.na(value2_prescription))%>%
+  filter(Cluster_Desc!="Flu vaccine")%>%
+  mutate(year=str_sub(date, 1, 4))%>%
+  group_by(year, Cluster_Desc, gp_system_supplier)%>%
+  summarise(median=median(value2_prescription, na.rm = T),
+            n = sum(!is.na(value2_prescription)))
 
-x%>%
-  filter(group=="value1_prescription")%>%
+
+p1<-x1%>%
   as_tibble()%>%
-  mutate(year=as.numeric(year),
+  mutate(year=as.integer(year),
          Cluster_Desc=as.character(Cluster_Desc))%>%
-  ggplot(aes(year, value, color=Cluster_Desc))+
-  geom_line()+
-  geom_point()+
-  facet_wrap(~gp_system_supplier,
-             scales="free")+
+  ggplot(aes(year, median, color=gp_system_supplier, shape= gp_system_supplier))+
+  geom_line(show.legend = F)+
+  geom_point(aes(size=n), alpha=0.5)+
+  facet_wrap(~Cluster_Desc,
+             scales="free_y",
+             labeller = label_wrap_gen(width = 25))+
   theme_gray(base_size = 20)+
   theme(legend.position = "bottom",
         legend.title = element_blank(),
         axis.title.y = element_blank(),
         axis.title.x = element_blank())+
-  labs(title="Median values of value1_condition along time and per system supplier")+
+  labs(title="Median values of value1_condition along time and per system supplier",
+       subtitle="(for medication clusters only)",
+       caption="Icon size represents number of entries")+
   ylab("Median")+
-  xlab("Year")
+  xlab("Year")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+  facetted_pos_scales(
+    y=list(
+      Cluster_Desc=="ACE" ~ scale_y_continuous(limits=c(0,100)),
+      Cluster_Desc=="AntiHT" ~ scale_y_continuous(limits=c(0,100)),
+      Cluster_Desc=="Antipsychotics" ~ scale_y_continuous(limits=c(0,100)),
+      Cluster_Desc=="ARB" ~ scale_y_continuous(limits=c(0,100)),
+      Cluster_Desc=="Asthma drugs" ~ scale_y_continuous(limits=c(0,300)),
+      Cluster_Desc=="Asthma ICS" ~ scale_y_continuous(limits=c(0,150)),
+      Cluster_Desc=="Beta-blockers (licensed)" ~ scale_y_continuous(limits=c(0,30)),
+      Cluster_Desc=="Beta-blockers (unlicensed)" ~ scale_y_continuous(limits=c(0,70)),
+      Cluster_Desc=="Bone sparing agents" ~ scale_y_continuous(limits=c(0,10)),
+      Cluster_Desc=="COPD drugs" ~ scale_y_continuous(limits=c(0,200)),
+      Cluster_Desc=="Clopidogrel drug codes" ~ scale_y_continuous(limits=c(0,30)),
+      Cluster_Desc=="Constipation treatment" ~ scale_y_continuous(limits=c(0,1000)),
+      Cluster_Desc=="Diabetes drugs" ~ scale_y_continuous(limits=c(0,100)),
+      Cluster_Desc=="Dipyridamole" ~ scale_y_continuous(limits=c(0,200)),
+      Cluster_Desc=="Epilepsy drugs" ~ scale_y_continuous(limits=c(0,100)),
+      Cluster_Desc=="Ezetimibe" ~ scale_y_continuous(limits=c(0,100)),
+      Cluster_Desc=="Hypothiroidism drugs" ~ scale_y_continuous(limits=c(0,100)),
+      Cluster_Desc=="Immunossuppression drugs" ~ scale_y_continuous(limits=c(0,100)),
+      Cluster_Desc=="Lithium" ~ scale_y_continuous(limits=c(0,100)),
+      Cluster_Desc=="Metformin" ~ scale_y_continuous(limits=c(0,200)),
+      Cluster_Desc=="Oral anticoagulation drugs" ~ scale_y_continuous(limits=c(0,100)),
+      Cluster_Desc=="Pharmacotherapy drug codes" ~ scale_y_continuous(limits=c(0,100)),
+      Cluster_Desc=="Prednisolone" ~ scale_y_continuous(limits=c(0,200)),
+      Cluster_Desc=="Salicylate prescription" ~ scale_y_continuous(limits=c(0,50)),
+      Cluster_Desc=="Severe asthma drugs" ~ scale_y_continuous(limits=c(0,150)),
+      Cluster_Desc=="Severe immunosuppresion drugs" ~ scale_y_continuous(limits=c(0,100)),
+      Cluster_Desc=="Statins" ~ scale_y_continuous(limits=c(0,50)),
+      Cluster_Desc=="Steroids" ~ scale_y_continuous(limits=c(0,100))
+      ))
 
 
-+
-  scale_color_manual(values=c("#7CAE00","#F8766D", "#C77CFF","#00BFC4"))
+ggsave('Outputs/Transfer/Figures/value1_prescription_median_timeseries_clusters_providers.png', 
+       last_plot(),
+       height=10,
+       width=20,
+       dpi="retina")
+        
+
+p2<-x2%>%
+  as_tibble()%>%
+  mutate(year=as.numeric(year),
+         Cluster_Desc=as.character(Cluster_Desc))%>%
+  ggplot(aes(year, median, color=gp_system_supplier, shape= gp_system_supplier))+
+  geom_line(show.legend = F)+
+  geom_point(aes(size=n), alpha=0.5)+
+  facet_wrap(~Cluster_Desc,
+             # scales="free_x",
+             labeller = label_wrap_gen(width = 40))+
+  theme_gray(base_size = 20)+
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank())+
+  labs(title="Median values of value2_condition along time and per system supplier",
+       subtitle="(for medication clusters only)",
+       caption="Icon size represents number of entries")+
+  ylab("Median")+
+  xlab("Year")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+  scale_x_continuous(limits=c(2014,2022), breaks=seq(2014, 2022, by=2))
 
 
-
-ggsave('Outputs/Transfer/Figures/value1_condition_and_value2_condition_values_timeseries_suppliers.png', 
+ggsave('Outputs/Transfer/Figures/value2_prescription_median_timeseries_clusters_providers.png', 
        last_plot(),
        height=10,
        width=20,
        dpi="retina")
 
-rm(x,x1)
+rm(x,x1,x2,p1,p2)
 
 
 
