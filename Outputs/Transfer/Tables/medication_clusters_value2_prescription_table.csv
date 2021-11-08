@@ -1,0 +1,36 @@
+Cluster,Completeness value2 Cegedim,Median value2 Cegedim,Completeness value2 EMIS,Median value2 EMIS,Completeness value2 EVA,Median value2 EVA,Completeness value2 TPP,Median value2 TPP
+ACE,0,NA,99.1,1,0,NA,99.9,28
+ARB,0,NA,97.8,1,NA,NA,99.8,28
+AntiHT,0,NA,98.6,1,0,NA,99.9,28
+Antipsychotics,0,NA,98.7,1,NA,NA,99,14
+Asthma drugs,0,NA,98.2,4,0,NA,99.9,28
+Asthma ICS,0,NA,97.1,4,NA,NA,99.8,30
+Bone sparing agents,0,NA,98.8,0.14300000000000002,0,NA,99.9,28
+Bone sparing therapy,0,NA,0,NA,NA,NA,0,NA
+COPD drugs,0,NA,97.5,4,NA,NA,99.9,30
+Clopidogrel drug codes,0,NA,99,1,NA,NA,100,28
+Clopidogrel prophylaxis codes,NA,NA,0,NA,NA,NA,0,NA
+Lithium stopped,NA,NA,0,NA,NA,NA,0,NA
+Constipation treatment,0,NA,98.8,2,0,NA,99.9,28
+Steroids,0,NA,99.3,1.5,0,NA,99.9,7
+Diabetes drugs,0,NA,97.9,2,0,NA,99.9,28
+Dipyridamole,NA,NA,100,2,NA,NA,100,28
+Epilepsy drugs,0,NA,99,2,0,NA,99.8,28
+Ezetimibe,0,NA,99.7,1,NA,NA,100,28
+Flu vaccine,0,NA,99.8,0.036,NA,NA,100,1
+Hypothiroidism drugs,0,NA,97.6,1,NA,NA,99.8,28
+Immunossuppresion drugs,0,NA,98.4,1,NA,NA,100,28
+Beta-blockers (licensed),0,NA,98.9,1,0,NA,99.8,28
+Lithium,NA,NA,99.6,1,NA,NA,100,28
+Metformin,0,NA,98.1,2,0,NA,99.9,28
+Oral anticoagulation drugs,0,NA,99.1,2,0,NA,99.9,28
+Oral anticoagulation prophylaxis,NA,NA,0,NA,NA,NA,0,NA
+Salicylate (over-the-counter),0,NA,0,NA,NA,NA,0,NA
+Pharmacotherapy codes,0,NA,0,NA,NA,NA,0,NA
+Pharmacotherapy drug codes,0,NA,98.4,1.286,NA,NA,100,14
+Prednisolone,0,NA,99.3,1.5,0,NA,99.9,7
+Salicylate prescription,0,NA,98.9,1,NA,NA,99.9,28
+Asthma drugs (severe),0,NA,98.2,2,NA,NA,99.8,28
+Immunosuppresion drugs (severe),0,NA,98.6,2,NA,NA,100,28
+Statins,0,NA,98.4,1,0,NA,99.9,28
+Beta-blockers (unlicensed),0,NA,96.8,1,0,NA,100,28
