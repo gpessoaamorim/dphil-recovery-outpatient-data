@@ -44,6 +44,8 @@ library(ggthemes) # themes for ggplot
 # library(plotly) # generate interactive plots (for inspection of individual points); commented as only needed ad hoc
 library(ggh4x) # additional functions to manipulate facets in ggplot
 library(ggalluvial) # river plots in ggplot
+library(mmtable2) # to build tables; can be installed as remotes::install_github("ianmoran11/mmtable2")
+library(gt) # to build tables
   
 # set working directory
 setwd("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/DPhil_RECOVERY")
@@ -149,20 +151,20 @@ gp_cluster_lookup$Cluster_Desc<-
            'Epilepsy drugs' = "Drug treatment for epilepsy",
            'Ezetimibe' = "Ezetimibe drug codes",
            'Flu vaccine'="Flu vaccine drug codes",
-           'Hypothiroidism drugs' = "Hypothyroidism treatment codes",
-           'Immunossuppresion drugs'="Immunosuppression drugs",
+           'Hypothyroidism drugs' = "Hypothyroidism treatment codes",
+           'Immunosuppression drugs'="Immunosuppression drugs",
            'Beta-blockers (licensed)'="Licensed beta-blocker prescription codes",
            'Lithium'="Lithium prescription codes",
            'Metformin'="Metformin drug codes",
            'Oral anticoagulation drugs'="Oral anticoagulant drug codes",
            'Oral anticoagulation prophylaxis'="Oral anticoagulant prophylaxis codes",
-           'OTC salicylate'="Over the counter (OTC) salicylate codes",
+           'Salicylate (over-the-counter)'="Over the counter (OTC) salicylate codes",
            'Pharmacotherapy codes'="Pharmacotherapy codes",
            'Pharmacotherapy drug codes' = "Pharmacotherapy drug codes",
            'Prednisolone'="Prednisolone drug codes",
            'Salicylate prescription'="Salicylate prescription codes",
-           'Severe asthma drugs'="Severe asthma drug treatment codes",
-           'Severe immunosuppresion drugs'="Severe immunosuppression drug codes",
+           'Asthma drugs (severe)'="Severe asthma drug treatment codes",
+           'Immunosuppression drugs (severe)'="Severe immunosuppression drug codes",
            'Statins' = "Statin codes",
            'Beta-blockers (unlicensed)'="Unlicensed beta-blocker prescription codes",
            'Other COVID-19 codes' = "Codes required for COVID-19 pandemic planning and research not included within associated clusters from other services to be returned with no time limit",
@@ -229,7 +231,7 @@ snomed_concepts<-read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/
 ## load entire list of SNOMED descriptions (not needed for overall script) ---------------------
 #(28 October 2020 release)
 
-snomed_descriptions<-read_csv("Tools/SNOMED terminology/Aggregated/rdiagnosislist/descriptions.csv", col_types = cols(Id = col_character(), moduleId = col_character(), conceptId = col_character(), typeId = col_character(), caseSignificanceId = col_character()))
+snomed_descriptions<-read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/SNOMED terminology/Aggregated/rdiagnosislist/descriptions.csv", col_types = cols(Id = col_character(), moduleId = col_character(), conceptId = col_character(), typeId = col_character(), caseSignificanceId = col_character()))
 
 
 # Load RECOVERY drug codelists ------------------
@@ -3766,12 +3768,343 @@ ggsave('Outputs/Transfer/Figures/value2_prescription_medication_clusters_with_gp
 rm(x,x1)
 
 
-## links -------
+
+
+### links -------
+gp_dt%>%
+  select(links)%>%
+  skim()
+
+x<-gp_dt%>%
+  select(study_number, code, date, record_date, gp_system_supplier, links)%>%
+  as_tibble()
+
+#### frequency bar plot ------
+
+x%>%
+  group_by(gp_system_supplier)%>%
+  summarise(Entries=sum(!is.na(links)),
+            'Completeness (%)'=round(Entries/n()*100,2),
+            Participants=n_distinct(study_number[!is.na(links)]),
+            Median=median(links, na.rm = T))%>%
+  pivot_longer(c(Entries, 'Completeness (%)', Participants, Median), names_to = "key", values_to="value")%>%
+  mutate(key=factor(key, levels=c("Entries", "Participants", 'Completeness (%)', "Median")))%>%
+  ggplot(aes(gp_system_supplier, value, group=gp_system_supplier, fill=gp_system_supplier))+
+  geom_bar(stat = 'identity', position = 'dodge', width = 0.5)+
+  facet_wrap(~key, ncol=4, scales="free_y")+
+  theme_gray(base_size = 20)+
+  theme(legend.position = "bottom",
+        axis.text.x = element_blank())+
+  labs(title="Coding of links",
+       subtitle="per GP system supplier",
+       fill=element_blank(),
+       y=element_blank(),
+       x=element_blank())+
+  geom_text(stat='identity', aes(label=value), vjust=-0.2, size=5, hjust=0.5)+
+  scale_fill_manual(values=c("#7CAE00","#F8766D", "#C77CFF","#00BFC4"))
+
+ggsave("Outputs/Transfer/Figures/links_frequency_bars_per_supplier.png",
+       last_plot(),
+       width=20,
+       height = 10,
+       dpi="retina")
+
+#### histogram  -----
+
+x%>%
+  filter(!is.na(links))%>%
+  ggplot(aes(links, fill=gp_system_supplier))+
+  geom_histogram(color="black")+
+  theme_gray(base_size = 20)+
+  theme(legend.position = "bottom")+
+  labs(title="Histogram of links",
+       subtitle="per GP system supplier",
+       fill=element_blank(),
+       y="Counts",
+       x="Links")+
+  scale_fill_manual(values=c("#7CAE00","#F8766D", "#00BFC4"))
+
+ggsave("Outputs/Transfer/Figures/links_histogram_per_supplier.png",
+       last_plot(),
+       width=20,
+       height = 10,
+       dpi="retina")
+
+#### timeseries  -----
+x%>%
+  filter(!is.na(links))%>%
+  mutate(year=as.numeric(str_sub(date, 1, 4)))%>%
+  group_by(gp_system_supplier, year)%>%
+  summarise(Entries=n(),
+            Participants=n_distinct(study_number),
+            Median=median(links, na.rm = T))%>%
+  pivot_longer(c(Entries, Participants, Median), names_to = "key", values_to="value")%>%
+  mutate(key=factor(key, levels=c("Entries", "Participants", "Median")))%>%
+  ggplot(aes(year, value, color=gp_system_supplier, shape=gp_system_supplier))+
+  geom_line()+
+  geom_point()+
+  theme_gray(base_size = 20)+
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+  facet_wrap(~key, scales="free")+
+  labs(title="Timeseries of coding for links",
+       subtitle="per GP system supplier",
+       color=element_blank(),
+       x="Year",
+       y=element_blank())+
+  scale_colour_manual(
+    name = "GP system supplier",
+    labels = c('Cegedim Healthcare Solutions', "EMIS", "TPP"),
+    values = c( "#7CAE00", "#F8766D", "#00BFC4")) +   
+  scale_shape_manual(
+    name = "GP system supplier",
+    labels = c('Cegedim Healthcare Solutions', "EMIS", "TPP"),
+    values = c(16, 17, 18))+
+  scale_x_continuous(limits = c(1950,2022))
+
+ggsave("Outputs/Transfer/Figures/links_timeseries_per_supplier.png",
+       last_plot(),
+       width=20,
+       height = 10,
+       dpi="retina")
+    
+
+#### inspect individual cases --------
+
+head(x)
+
+gp_dt%>%
+  filter(!is.na(links))%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  select(study_number, code, ConceptId_Description, date, record_date, links, episode_condition, episode_prescription, value1_condition, value2_condition, value1_prescription, value2_prescription, gp_system_supplier)%>%
+  distinct(study_number, code, date, record_date, .keep_all = T)%>%
+  arrange(study_number, links, date)%>%
+  as_tibble()%>%
+  View()
+
+
+rm(x)
 
 
 
+## General table of important information per medication cluster ------
+
+#### simple yet ugly way  ------
+
+t1<-gp_dt%>%
+  select(study_number, code, date, gp_system_supplier, episode_prescription, value1_prescription, value2_prescription)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  filter(Cluster_Category=="Medications")%>%
+  as_tibble()%>%
+  group_by(Cluster_Desc)%>%
+  summarise(Entries=n(),
+            Participants=n_distinct(study_number),
+            'Entries per participant' = round(Entries/Participants,1),
+            'Unique codes' = n_distinct(code),
+            'Earliest record' = min(as.numeric(str_sub(date,1,4)))
+  )%>%
+  as_tibble()
+
+t2<-gp_dt%>%
+  select(study_number, code, date, gp_system_supplier, episode_prescription, value1_prescription, value2_prescription)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  filter(Cluster_Category=="Medications")%>%
+  group_by(Cluster_Desc, study_number)%>%
+  filter(n()>1)%>%
+  arrange(date)%>%
+  summarise(average=as.numeric(mean(diff(date))))%>%
+  group_by(Cluster_Desc)%>%
+  summarise('Mean interval between entries (in days)'=round(mean(average), digits=0))%>%
+  as_tibble()
+
+t3<-gp_dt%>%
+  select(study_number, code, date, gp_system_supplier, episode_prescription, value1_prescription, value2_prescription)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  filter(Cluster_Category=="Medications")%>%
+  group_by(episode_prescription, Cluster_Desc, gp_system_supplier)%>%
+  summarise(n=n())%>%
+  as_tibble()%>%
+  mutate_when(is.na(episode_prescription), list(episode_prescription="Missing"))%>%
+  pivot_wider(names_from=c(gp_system_supplier,episode_prescription), 
+              values_from = n, 
+              names_glue="{gp_system_supplier}_{episode_prescription}",
+              names_sort = T)%>%  
+  arrange(Cluster_Desc)
+
+t4<-gp_dt%>%
+  select(study_number, code, date, gp_system_supplier,value1_prescription)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  filter(Cluster_Category=="Medications")%>%
+  group_by(Cluster_Desc, gp_system_supplier)%>%
+  summarise(Completeness=round(sum(!is.na(value1_prescription))/n()*100,1),
+            Median=median(value1_prescription, na.rm=T))%>%
+  pivot_longer(c(Completeness, Median), names_to="key", values_to = "value")%>%
+  pivot_wider(names_from=c(gp_system_supplier, key), 
+              values_from = c(value),
+              names_glue = "{gp_system_supplier}_{key}",
+              names_sort = T)%>%  
+  arrange(Cluster_Desc)%>%
+  as_tibble()
+
+t5<-gp_dt%>%
+  select(study_number, code, date, gp_system_supplier,value2_prescription)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  filter(Cluster_Category=="Medications")%>%
+  group_by(Cluster_Desc, gp_system_supplier)%>%
+  summarise(Completeness=round(sum(!is.na(value2_prescription))/n()*100,1),
+            Median=median(value2_prescription, na.rm=T))%>%
+  pivot_longer(c(Completeness, Median), names_to="key", values_to = "value")%>%
+  pivot_wider(names_from=c(gp_system_supplier, key), 
+              values_from = c(value),
+              names_glue = "{gp_system_supplier}_{key}",
+              names_sort = T)%>%  
+  arrange(Cluster_Desc)%>%
+  as_tibble()
 
 
+t<-bind_cols(t1,t2)
+
+t%<>%
+  select(Cluster="Cluster_Desc...1",
+         Entries,
+         Participants,
+         'Entries per participant',
+         'Unique codes',
+         'Earliest record',
+         'Mean interval between entries (in days)')
+
+t3%<>%
+  select(Cluster="Cluster_Desc",
+         'Acute (one-off) Cegedim' = 'Cegedim Healthcare Solutions_A',
+         'Issue of repeat Cegedim' = 'Cegedim Healthcare Solutions_I',
+         'Missing Cegedim' = 'Cegedim Healthcare Solutions_Missing',
+         
+         'Acute (one-off) EMIS' = 'EMIS_A',
+         'Issue of repeat EMIS' = 'EMIS_I',
+         'Missing EMIS' = 'EMIS_Missing',
+         
+         'Missing EVA Health Technologies' = 'EVA Health Technologies_Missing',
+         
+         'Acute (one-off) TPP' = 'TPP_A',
+         'Issue of repeat TPP' = 'TPP_I',
+         'Missing TPP' = 'TPP_Missing')
+
+t4%<>%
+  select(Cluster="Cluster_Desc",
+         'Completeness value1 Cegedim' = "Cegedim Healthcare Solutions_Completeness",
+         'Median value1 Cegedim' = "Cegedim Healthcare Solutions_Median",
+         
+         'Completeness value1 EMIS' = "EMIS_Completeness",
+         'Median value1 EMIS' = "EMIS_Median",
+         
+         'Completeness value1 EVA' = "EVA Health Technologies_Completeness"    ,
+         'Median value1 EVA' = "EVA Health Technologies_Median"    ,
+         
+         'Completeness value1 TPP' = "TPP_Completeness",
+         'Median value1 TPP' = "TPP_Median")
+
+t5%<>%
+  select(Cluster="Cluster_Desc",
+         'Completeness value2 Cegedim' = "Cegedim Healthcare Solutions_Completeness",
+         'Median value2 Cegedim' = "Cegedim Healthcare Solutions_Median",
+         
+         'Completeness value2 EMIS' = "EMIS_Completeness",
+         'Median value2 EMIS' = "EMIS_Median",
+         
+         'Completeness value2 EVA' = "EVA Health Technologies_Completeness",
+         'Median value2 EVA' = "EVA Health Technologies_Median",
+         
+         'Completeness value2 TPP' = "TPP_Completeness",
+         'Median value2 TPP' = "TPP_Median"
+  )
+
+write_csv(t, "Outputs/Transfer/Tables/medication_clusters_general_table.csv")
+
+write_csv(t3, "Outputs/Transfer/Tables/medication_clusters_episode_prescription_table.csv")
+
+write_csv(t4, "Outputs/Transfer/Tables/medication_clusters_value1_prescription_table.csv")
+
+write_csv(t5, "Outputs/Transfer/Tables/medication_clusters_value2_prescription_table.csv")
+
+
+#### complicated but nicer way (mmtable) ------
+t1<-gp_dt%>%
+  select(study_number, code, date, gp_system_supplier, episode_prescription, value1_prescription, value2_prescription)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  filter(Cluster_Category=="Medications")%>%
+  as_tibble()%>%
+  group_by(Cluster_Desc)%>%
+  summarise(Entries=n(),
+            Participants=n_distinct(study_number),
+            'Entries per participant' = Entries/Participants,
+            'Unique codes' = n_distinct(code),
+            'Earliest record' = min(as.numeric(str_sub(date,1,4)))
+            )%>%
+  pivot_longer(-c(Cluster_Desc), names_to="key", values_to="value")%>%
+  mmtable(value, table_name = "")+
+  header_top(key)+
+  header_left(Cluster_Desc)
+
+t2<-gp_dt%>%
+  select(study_number, code, date, gp_system_supplier, episode_prescription, value1_prescription, value2_prescription)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  filter(Cluster_Category=="Medications")%>%
+  group_by(Cluster_Desc, study_number)%>%
+  filter(n()>1)%>%
+  arrange(date)%>%
+  summarise(average=as.numeric(mean(diff(date))))%>%
+  group_by(Cluster_Desc)%>%
+  summarise('Mean interval between entries (in days)'=round(mean(average), digits=0))%>%
+  pivot_longer(-Cluster_Desc, names_to = "key", values_to="value")%>%
+  as_tibble()%>%
+  mmtable(value, table_name = "")+
+  header_top_left(key)+
+  header_left(Cluster_Desc)
+  
+t3<-gp_dt%>%
+  select(study_number, code, date, gp_system_supplier, episode_prescription, value1_prescription, value2_prescription)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  filter(Cluster_Category=="Medications")%>%
+  group_by(episode_prescription, Cluster_Desc, gp_system_supplier)%>%
+  summarise(n=n())%>%
+  as_tibble()%>%
+  mmtable(n, table_name="Episode_prescription")+
+  header_top(episode_prescription)+
+  header_top_left(gp_system_supplier)+
+  header_left(Cluster_Desc)
+
+t4<-gp_dt%>%
+  select(study_number, code, date, gp_system_supplier,value1_prescription)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  filter(Cluster_Category=="Medications")%>%
+  group_by(Cluster_Desc, gp_system_supplier)%>%
+  summarise(Completeness=round(sum(!is.na(value1_prescription))/n()*100,1),
+            Median=median(value1_prescription, na.rm=T))%>%
+  pivot_longer(c(Completeness, Median), names_to="key", values_to = "value")%>%
+  as_tibble()%>%
+  mmtable(value, table_name="Value1_prescription")+
+  header_top(key)+
+  header_top_left(gp_system_supplier)+
+  header_left(Cluster_Desc)
+
+t5<-gp_dt%>%
+  select(study_number, code, date, gp_system_supplier,value2_prescription)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  filter(Cluster_Category=="Medications")%>%
+  group_by(Cluster_Desc, gp_system_supplier)%>%
+  summarise(Completeness=round(sum(!is.na(value2_prescription))/n()*100,1),
+            Median=median(value2_prescription, na.rm=T))%>%
+  pivot_longer(c(Completeness, Median), names_to="key", values_to = "value")%>%
+  as_tibble()%>%
+  mmtable(value, table_name="Value2_prescription")+
+  header_top(key)+
+  header_top_left(gp_system_supplier)+
+  header_left(Cluster_Desc)
+  
+t<-t1+t2
+
+
+tt<-t3+t4+t5
 
 ## Dispensing dataset -----------
 
