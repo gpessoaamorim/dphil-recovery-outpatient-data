@@ -1,0 +1,36 @@
+Cluster,Entries,Participants,Entries per participant,Unique codes,Earliest record,Mean interval between entries (in days)
+ACE,237939,9211,25.8,63,2018,41
+AntiHT,1119439,19894,56.3,428,2018,29
+Antipsychotics,54278,1334,40.7,102,2018,27
+ARB,118742,4393,27,64,2018,41
+Asthma drugs,253693,10177,24.9,162,2018,65
+Asthma drugs (severe),90570,4509,20.1,45,2018,53
+Asthma ICS,69800,4597,15.2,66,2018,61
+Beta-blockers (licensed),179882,6649,27.1,28,2018,36
+Beta-blockers (unlicensed),53603,2392,22.4,40,2018,45
+Bone sparing agents,42265,1934,21.9,19,2018,44
+Bone sparing therapy,128,88,1.5,5,2018,174
+Clopidogrel drug codes,73326,2886,25.4,6,2018,36
+Clopidogrel prophylaxis codes,143,106,1.3,1,2018,305
+Constipation treatment,111282,7327,15.2,78,2018,66
+COPD drugs,111094,5974,18.6,91,2018,57
+Diabetes drugs,371126,8409,44.1,139,2018,32
+Dipyridamole,1732,70,24.7,5,2018,44
+Epilepsy drugs,200451,5963,33.6,156,2018,36
+Ezetimibe,13211,500,26.4,5,2018,42
+Flu vaccine,39605,7509,5.3,14,1936,579
+Hypothiroidism drugs,146654,2918,50.3,16,2018,31
+Immunossuppresion drugs,20091,1070,18.8,117,2006,54
+Immunosuppresion drugs (severe),6364,392,16.2,39,2018,58
+Lithium,3892,77,50.5,11,2018,22
+Lithium stopped,82,54,1.5,1,1996,238
+Metformin,190201,7116,26.7,31,2018,44
+Oral anticoagulation drugs,93250,4586,20.3,15,2018,30
+Oral anticoagulation prophylaxis,721,353,2,2,2018,166
+Pharmacotherapy codes,435,257,1.7,12,2018,123
+Pharmacotherapy drug codes,1231,282,4.4,32,2018,55
+Prednisolone,63199,7462,8.5,14,2018,119
+Salicylate (over-the-counter),889,602,1.5,5,2018,261
+Salicylate prescription,147324,5761,25.6,14,2018,42
+Statins,440884,15300,28.8,45,2018,45
+Steroids,74715,8277,9,39,2018,116
