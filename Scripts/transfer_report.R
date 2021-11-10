@@ -791,7 +791,7 @@ rand_dates%>%
 
 #### load lsoa to LAD matches (whole UK) - May 2021------
 # (from https://geoportal.statistics.gov.uk/datasets/postcode-to-output-area-to-lower-layer-super-output-area-to-middle-layer-super-output-area-to-local-authority-district-may-2021-lookup-in-the-uk/about)
-lsoa_lad<-read_csv("Tools/UK maps/OA-LSOA-MSOA-LAD-lookup/PCD_OA_LSOA_MSOA_LAD_MAY21_UK_LU.csv", col_types = cols(pcd7 = col_skip(), pcd8 = col_skip(), pcds = col_skip(), dointr = col_skip(),doterm = col_skip(), usertype = col_skip(), oa11cd = col_skip(), msoa11cd = col_skip(),msoa11nm = col_skip(), ladnmw = col_skip()))
+lsoa_lad<-read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/UK maps/OA-LSOA-MSOA-LAD-lookup/PCD_OA_LSOA_MSOA_LAD_MAY21_UK_LU.csv", col_types = cols(pcd7 = col_skip(), pcd8 = col_skip(), pcds = col_skip(), dointr = col_skip(),doterm = col_skip(), usertype = col_skip(), oa11cd = col_skip(), msoa11cd = col_skip(),msoa11nm = col_skip(), ladnmw = col_skip()))
 
 lsoa_lad%<>%
   distinct(lsoa11cd, .keep_all=T)
@@ -812,7 +812,7 @@ lsoa_lad%>%
 
 #### load LAD-county matches (for England) - April 2021------
 # from https://geoportal.statistics.gov.uk/datasets/local-authority-district-to-county-april-2021-lookup-in-england/explore
-lad_county <- read_csv("Tools/UK maps/LAD-county-lookup/Local_Authority_District_to_County_(April_2021)_Lookup_in_England.csv", col_types = cols(FID = col_skip()))
+lad_county <- read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/UK maps/LAD-county-lookup/Local_Authority_District_to_County_(April_2021)_Lookup_in_England.csv", col_types = cols(FID = col_skip()))
 # this list is problematic because it does not include the 58 unitary authorities 
 # there are 250 LADs, corresponding to these divisions:
 # 24 county councils (181 LADs)
@@ -881,12 +881,13 @@ counties%<>%
   mutate(county_ua=if_else(grepl('E11|E13', county_code), ladcd, county_ua), .keep=c("all"))
 
 # calculate counts per county, UAs or LAD (for London and metropolitan councils)
-county_counts<-gp%>%
+county_counts<-gp_dt%>%
   select(study_number, code, lsoa)%>%
   left_join(counties, by="lsoa")%>%
   group_by(county_ua)%>%
   summarise(entries=n(),
-            participants=n_distinct(study_number))
+            participants=n_distinct(study_number))%>%
+  as_tibble()
 
 # calculate unique counties or UAs in the UK
 counties%>%
@@ -963,7 +964,7 @@ county_counts%<>%
 rm(withdrew, counties, lsoa_lad, lad_county, filename, a)
 
 # merge counts from recovery with map file
-poly_counties<-merge(poly_counties, county_counts, by="CTYUA21CD")
+poly_counties<-raster::merge(poly_counties, county_counts, by="CTYUA21CD")
 
 # convert map file to a tidy format for ggplot
 poly_counties_df<-broom::tidy(poly_counties)
@@ -1143,14 +1144,14 @@ rm(gp_supplier_chart)
 #### map of gp system suppliers ----
 
 # load lsoa to LAD map (as above)
-lsoa_lad<-read_csv("Tools/UK maps/OA-LSOA-MSOA-LAD-lookup/PCD_OA_LSOA_MSOA_LAD_MAY21_UK_LU.csv", col_types = cols(pcd7 = col_skip(), pcd8 = col_skip(), pcds = col_skip(), dointr = col_skip(),doterm = col_skip(), usertype = col_skip(), oa11cd = col_skip(), msoa11cd = col_skip(),msoa11nm = col_skip(), ladnmw = col_skip()))
+lsoa_lad<-read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/UK maps/OA-LSOA-MSOA-LAD-lookup/PCD_OA_LSOA_MSOA_LAD_MAY21_UK_LU.csv", col_types = cols(pcd7 = col_skip(), pcd8 = col_skip(), pcds = col_skip(), dointr = col_skip(),doterm = col_skip(), usertype = col_skip(), oa11cd = col_skip(), msoa11cd = col_skip(),msoa11nm = col_skip(), ladnmw = col_skip()))
 
 # select distinct LSOAs (map included lower levels such as OA so there were multiple entries for each LSOA)
 lsoa_lad%<>%
   distinct(lsoa11cd, .keep_all=T) 
 
 # load LAD to county maps
-lad_county <- read_csv("Tools/UK maps/LAD-county-lookup/Local_Authority_District_to_County_(April_2021)_Lookup_in_England.csv", col_types = cols(FID = col_skip()))
+lad_county <- read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/UK maps/LAD-county-lookup/Local_Authority_District_to_County_(April_2021)_Lookup_in_England.csv", col_types = cols(FID = col_skip()))
 
 # merge lsoa-lad-counties map
 counties<-left_join(lsoa_lad, lad_county, by=c("ladcd"="LAD21CD"))
@@ -1181,11 +1182,12 @@ counties%<>%
 
 # calculate counts of participants per county (separated by supplier)
 county_counts<-
-  gp%>%
+  gp_dt%>%
   select(study_number, code, gp_system_supplier,lsoa)%>%
   left_join(counties, by="lsoa")%>%
   group_by(county_ua, gp_system_supplier)%>%
-  summarise(participants=n_distinct(study_number))
+  summarise(participants=n_distinct(study_number))%>%
+  as_tibble()
 
 # align county code field name
 county_counts%<>%
@@ -1197,7 +1199,7 @@ county_counts%<>%
 
 
 # merge counts from recovery with map file
-poly_counties<-merge(poly_counties, county_counts, by="CTYUA21CD")
+poly_counties<-raster::merge(poly_counties, county_counts, by="CTYUA21CD")
 
 # convert map file to a tidy format for ggplot
 poly_counties_df<-broom::tidy(poly_counties)
@@ -2043,7 +2045,7 @@ rm(x,cluster_category_table, cluster_category_table_1)
 
 #### matching codes to the gp cluster lookup
 
-a<- gp%>%
+a<- gp_dt%>%
   select(study_number, code, date)%>%
   left_join(gp_cluster_lookup, by=c("code" = "ConceptId"))%>%
   select(study_number, code, ConceptId_Description, date, Cluster_Desc, Cluster_Category)
@@ -2067,6 +2069,7 @@ a%>%
 a%>%
   filter(is.na(ConceptId_Description))%>%
   distinct(code)%>%
+  as_tibble()%>%
   .[[1]]->x # saving individual codes to a list
 
 
@@ -2148,13 +2151,13 @@ gp%>%
   filter(is.na(episode_prescription) & is.na(value2_prescription) & is.na(value1_prescription))%>%
   nrow() # 8712 of those entries are probably not prescriptions; so majority should be prescriptions
 
+unmatched_codes <- setdiff(x,x1)
+
+unmatched_codes <- unmatched_codes[3:700] # slicing out NA and 0
 
 
 
-
-
-
-#### non-matched codes along time
+#### non-matched codes along time -----
 a%>%
   select(study_number, code, date)%>% # some variables
   mutate(year=str_sub(date, 1,4))%>% # generate year from date
@@ -2171,37 +2174,57 @@ ggsave("Outputs/Transfer/Figures/unmatched_codes_timeseries.png",
        last_plot()) # saving plot
 
 
-#### unmatched codes across GP suppliers
+#### unmatched codes across GP suppliers ----
 
-a%>%
-  select(study_number, code, date, gp_system_supplier)%>% #some variables
+gp_dt%>%
+  mutate(gp_system_supplier=recode_factor(gp_system_supplier, 
+                                          "Cegedim Healthcare Solutions" = "Cegedim",
+                                          "EVA Health Technologies" = "EVA"))%>%
+  filter(is.na(code)|code=="0"|code%in%unmatched_codes)%>%
+  mutate(unmatched_code_type = as.factor(case_when(is.na(code) ~ "NA",
+                                         code=="0" ~ "0",
+                                         code %in% unmatched_codes ~ "Other incorrect codes")))%>%
+  select(study_number, code, date, gp_system_supplier, unmatched_code_type)%>% #some variables
   mutate(gp_system_supplier=as.factor(gp_system_supplier))%>% # specify gp system supplier as a factor
-  group_by(gp_system_supplier)%>% # create groups
+  group_by(gp_system_supplier, unmatched_code_type)%>% # create groups
   summarise(n=n())%>% # calculate counts per group
-  ggplot(aes(x=gp_system_supplier, y=n))+ # pass variables to gg object
+  as_tibble()%>%
+  ggplot(aes(x=gp_system_supplier, y=n, fill=gp_system_supplier))+ # pass variables to gg object
   geom_bar(stat = 'identity')+ # create bar chart and specify statistical transformation for length (none)
   geom_text(stat='identity', # specify statistical transformation (none)
             aes(label=round(n, 1)), # specify values for text labels (the counts)
             vjust=-0.5, size=4, hjust=0.5)+ # adjust position and size
-  labs(y="entries",
-       x="GP system supplier") # create x and y axis labels
+  facet_wrap(~unmatched_code_type)+
+  labs(y="Entries",
+       x="GP system supplier",
+       title="Unmatched codes per GP system supplier")+
+  theme_gray(base_size=20)+
+  theme(axis.text.x = element_text(angle = 0),
+                                 legend.position = "right",
+                                 axis.title.x = element_blank(),
+                                 legend.title = element_blank())+
+  scale_fill_manual(values=c("#7CAE00","#F8766D", "#C77CFF","#00BFC4"))
+
 
 ggsave("Outputs/Transfer/Figures/unmatched_codes_gp_supplier.png",
-       last_plot()
+       last_plot(),
+       height=8,
+       width=20,
+       dpi="retina"
 )
 
-#### map of unmatched codes
+#### map of unmatched codes------
 
 
 # load lsoa to LAD map (as above)
-lsoa_lad<-read_csv("Tools/UK maps/OA-LSOA-MSOA-LAD-lookup/PCD_OA_LSOA_MSOA_LAD_MAY21_UK_LU.csv", col_types = cols(pcd7 = col_skip(), pcd8 = col_skip(), pcds = col_skip(), dointr = col_skip(),doterm = col_skip(), usertype = col_skip(), oa11cd = col_skip(), msoa11cd = col_skip(),msoa11nm = col_skip(), ladnmw = col_skip()))
+lsoa_lad<-read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/UK maps/OA-LSOA-MSOA-LAD-lookup/PCD_OA_LSOA_MSOA_LAD_MAY21_UK_LU.csv", col_types = cols(pcd7 = col_skip(), pcd8 = col_skip(), pcds = col_skip(), dointr = col_skip(),doterm = col_skip(), usertype = col_skip(), oa11cd = col_skip(), msoa11cd = col_skip(),msoa11nm = col_skip(), ladnmw = col_skip()))
 
 # select distinct LSOAs (map included lower levels such as OA so there were multiple entries for each LSOA)
 lsoa_lad%<>%
   distinct(lsoa11cd, .keep_all=T) 
 
 # load LAD to county maps
-lad_county <- read_csv("Tools/UK maps/LAD-county-lookup/Local_Authority_District_to_County_(April_2021)_Lookup_in_England.csv", col_types = cols(FID = col_skip()))
+lad_county <- read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/UK maps/LAD-county-lookup/Local_Authority_District_to_County_(April_2021)_Lookup_in_England.csv", col_types = cols(FID = col_skip()))
 
 # merge lsoa-lad-counties map
 counties<-left_join(lsoa_lad, lad_county, by=c("ladcd"="LAD21CD"))
@@ -2239,12 +2262,32 @@ county_counts<-
   summarise(entries=n(),
             participants=n_distinct(study_number))
 
+county_counts<-
+  gp_dt%>%
+    mutate(gp_system_supplier=recode_factor(gp_system_supplier, 
+                                            "Cegedim Healthcare Solutions" = "Cegedim",
+                                            "EVA Health Technologies" = "EVA"))%>%
+    filter(is.na(code)|code=="0"|code%in%unmatched_codes)%>%
+    mutate(unmatched_code_type = as.factor(case_when(is.na(code) ~ "NA",
+                                                     code=="0" ~ "0",
+                                                     code %in% unmatched_codes ~ "Other incorrect codes")))%>%
+  select(study_number, code, lsoa, unmatched_code_type)%>%
+  left_join(counties, by="lsoa")%>%
+  group_by(county_ua,  unmatched_code_type)%>%
+  summarise(entries=n())%>%
+  as_tibble()
+
+
 # align county code field name
 county_counts%<>%
   rename(CTYUA21CD=county_ua)
 
+# rearrange data format to allow one entry per county (and thus merging in step below)
+county_counts%<>%
+  pivot_wider(names_from=unmatched_code_type, values_from = entries)# spreading the counts 
+
 # merge counts from recovery with map file
-poly_counties<-merge(poly_counties, county_counts, by="CTYUA21CD")
+poly_counties<-raster::merge(poly_counties, county_counts, by="CTYUA21CD")
 
 # convert map file to a tidy format for ggplot
 poly_counties_df<-broom::tidy(poly_counties)
@@ -2255,31 +2298,25 @@ poly_counties$id<-row.names(poly_counties)
 # rejoin the data for each area (lost in the tidy transformation)
 # and reduce amount of data that gets dragged along to aid processing
 poly_counties_df<-left_join(poly_counties_df, poly_counties@data, by="id")%>%
-  select(long, lat, order, hole, piece, group, id, entries, participants)
-
-# plot the map (for participant counts)
-map1<-poly_counties_df%>%
-  rename(Participants=participants)%>%
-  ggplot(aes(x=long, y=lat, group=group, fill=Participants))+
-  geom_polygon(colour="black", size=0.1)+
-  theme_void()
+  select(long, lat, order, hole, piece, group, id, "NA", "0", "Other incorrect codes")%>%
+  pivot_longer(cols=c("NA", "0", "Other incorrect codes"), names_to = "unmatched_code_type", values_to="Entries")
 
 # plot the map (for entry counts)
-map2<-poly_counties_df%>%
-  rename(Entries=entries)%>%
+map1<-poly_counties_df%>%
   ggplot(aes(x=long, y=lat, group=group, fill=Entries))+
   geom_polygon(colour="black", size=0.1)+
-  theme_void()
-
-# join both maps
-map=map1+map2
+  facet_wrap(~unmatched_code_type)+
+  theme_void(base_size=20)
 
 # print plot
-print(map)
+print(map1)
 
 # save map
 ggsave("Outputs/Transfer/Figures/unmatched_codes_map.png",
-       map)
+       last_plot(),
+       width=20,
+       height=8,
+       dpi="retina")
 
 
 rm(x, x1, y, a, a1, counties, county_counts, filename, lad_county, lsoa_lad, map, map1, map2, poly_counties, poly_counties_df, withdrew, x1, y)
