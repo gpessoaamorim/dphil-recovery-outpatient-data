@@ -61,8 +61,6 @@ options(scipen=10000) # prevent scientific notation in plots
 
 # set custom ggplot themes ------
 
-##  (need to set a custom theme for word documents)
-
 ## custom themes for slides
 # oxpop_blue_panel<- (dark_mode(theme_fivethirtyeight(base_size = 20))+
 #                  theme(plot.background = element_rect(fill = "#081c44"),
