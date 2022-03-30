@@ -51,6 +51,7 @@ library(ggalluvial) # river plots in ggplot
 library(mmtable2) # to build tables; can be installed as remotes::install_github("ianmoran11/mmtable2")
 library(gt) # to build tables
 library(ggsankey) # river plots in ggplot
+library(ggvenn)
 
   
 # set working directory
@@ -228,48 +229,48 @@ FSN <- read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_g
 ## load entire list of SNOMED concepts that ever existed -------
 #(28 October 2020 release)
 
-snomed_concepts<-read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/SNOMED terminology/Aggregated/rdiagnosislist/concepts.csv", col_types = cols(id = col_character(), moduleId = col_character(), definitionStatusId = col_character()))
+# snomed_concepts<-read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/SNOMED terminology/Aggregated/rdiagnosislist/concepts.csv", col_types = cols(id = col_character(), moduleId = col_character(), definitionStatusId = col_character()))
 
 
 
 ## load entire list of SNOMED descriptions (not needed for overall script) ---------------------
 #(28 October 2020 release)
 
-snomed_descriptions<-read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/SNOMED terminology/Aggregated/rdiagnosislist/descriptions.csv", col_types = cols(Id = col_character(), moduleId = col_character(), conceptId = col_character(), typeId = col_character(), caseSignificanceId = col_character()))
-
-
-# Load RECOVERY drug codelists ------------------
-## SNOMED codelists ------------------
-file.list <- list.files(path="K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/DPhil_RECOVERY/Tools/Codelists/Medications_SNOMED/", full.names=T, pattern = "*.xlsx")
-
-df = lapply(file.list, function(i){
-  x=read_excel(i, sheet="Codelist")
-  x$codelist=i
-  x
-})
-
-codelists_snomed<-bind_rows(df)
-
-codelists_snomed$codelist<-str_sub(codelists$codelist,117, -6)
-
-rm(file.list,df)
-
-## BNF codelists------------------
-
-file.list <- list.files(path="K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/DPhil_RECOVERY/Tools/Codelists/Medications_BNF/", full.names=T, pattern = "*.xlsx")
-
-df = lapply(file.list, function(i){
-  x=read_excel(i, sheet="Codelist")
-  x$codelist=i
-  x
-})
-
-codelists_bnf<-bind_rows(df)
-
-codelists_bnf$codelist<-str_sub(codelists_bnf$codelist,112, -6)
-
-rm(df, file.list)
-
+# snomed_descriptions<-read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/SNOMED terminology/Aggregated/rdiagnosislist/descriptions.csv", col_types = cols(Id = col_character(), moduleId = col_character(), conceptId = col_character(), typeId = col_character(), caseSignificanceId = col_character()))
+# 
+# 
+# # Load RECOVERY drug codelists ------------------
+# ## SNOMED codelists ------------------
+# file.list <- list.files(path="K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/DPhil_RECOVERY/Tools/Codelists/Medications_SNOMED/", full.names=T, pattern = "*.xlsx")
+# 
+# df = lapply(file.list, function(i){
+#   x=read_excel(i, sheet="Codelist")
+#   x$codelist=i
+#   x
+# })
+# 
+# codelists_snomed<-bind_rows(df)
+# 
+# codelists_snomed$codelist<-str_sub(codelists$codelist,117, -6)
+# 
+# rm(file.list,df)
+# 
+# ## BNF codelists------------------
+# 
+# file.list <- list.files(path="K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/DPhil_RECOVERY/Tools/Codelists/Medications_BNF/", full.names=T, pattern = "*.xlsx")
+# 
+# df = lapply(file.list, function(i){
+#   x=read_excel(i, sheet="Codelist")
+#   x$codelist=i
+#   x
+# })
+# 
+# codelists_bnf<-bind_rows(df)
+# 
+# codelists_bnf$codelist<-str_sub(codelists_bnf$codelist,112, -6)
+# 
+# rm(df, file.list)
+# 
 
 
 
@@ -289,8 +290,12 @@ n_distinct(meds_unfiltered$study_number) # 32922
 gp<-gp_unfiltered%>%
   filter(!study_number %in% withdrew)
 
+nrow(gp) # 9908044
+n_distinct(gp$study_number) # 32901
+
+
 ### save filtered gp dataset ------
-write.csv(gp, "K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Input datasets/INT08_GDPPR/0047/gp_filtered.csv", row.names=F)
+# write.csv(gp, "K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Input datasets/INT08_GDPPR/0047/gp_filtered.csv", row.names=F)
 
 rm(gp_unfiltered)
 
@@ -300,11 +305,25 @@ rm(gp_unfiltered)
 meds<-meds_unfiltered%>%
   filter(!study_number %in% withdrew)
 
+nrow(meds) # 6407818
+n_distinct(meds$study_number) # 32911
+
 rm(meds_unfiltered)
 
+### save filtered meds dataset ----------
+# write.csv(meds, "K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Input datasets/INT07_PCAREMEDS/0049/meds_filtered.csv", row.names=F)
 
 
 
+
+
+
+
+
+
+
+
+## General features -----
 
 nrow(gp) # 9908044
 n_distinct(gp$study_number) # 32901
@@ -315,23 +334,23 @@ n_distinct(meds$study_number) # 32911
 rand_dates<-rand_dates%>%
   filter(!(study_number %in% withdrew))
 
-rm(withdrew)
+# rm(withdrew)
 
 ## !Code to load filtered gp dataset --------
 
 # load gp
-gp <- read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Input datasets/INT08_GDPPR/0047/gp_filtered/gp_filtered.csv", 
-                          col_types = cols(study_number = col_character(),
-                                           sex = readr::col_factor(levels = c("0","1")),
-                                           date_of_death = col_date(format = "%Y-%m-%d"),
-                                           reporting_period_end_date = col_date(format = "%Y-%m-%d"), 
-                                           date = col_date(format = "%Y-%m-%d"),
-                                           record_date = col_date(format = "%Y-%m-%d"),
-                                           code = col_character(), 
-                                           value1_condition = col_number(), 
-                                           value2_condition = col_number(),
-                                           value1_prescription = col_number(),
-                                           value2_prescription = col_number()))
+# gp <- read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Input datasets/INT08_GDPPR/0047/gp_filtered/gp_filtered.csv",
+#                           col_types = cols(study_number = col_character(),
+#                                            sex = readr::col_factor(levels = c("0","1")),
+#                                            date_of_death = col_date(format = "%Y-%m-%d"),
+#                                            reporting_period_end_date = col_date(format = "%Y-%m-%d"),
+#                                            date = col_date(format = "%Y-%m-%d"),
+#                                            record_date = col_date(format = "%Y-%m-%d"),
+#                                            code = col_character(),
+#                                            value1_condition = col_number(),
+#                                            value2_condition = col_number(),
+#                                            value1_prescription = col_number(),
+#                                            value2_prescription = col_number()))
 
 levels(gp$episode_prescription)<-list('Acute (one-off)' = "A",
                                       'Issue of repeat' = "I")
@@ -355,7 +374,8 @@ meds <- read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_
 participants_gp <- gp_dt%>%
   distinct(study_number)%>%
   left_join(rand_dates, by=c("study_number"))%>%
-  arrange(desc(randomisation_date))
+  arrange(desc(randomisation_date))%>%
+  as_tibble()
 
 x1<-participants_gp%>%
   slice_head(n=1)%>%
@@ -365,14 +385,15 @@ x1<-participants_gp%>%
 
 x1 # 29/03/21
 
-participants_meds <- meds_unfiltered%>%
+participants_meds <- meds%>%
   distinct(study_number)%>%
   left_join(rand_dates, by=c("study_number"))%>%
   arrange(desc(randomisation_date))
 
 x2<-participants_meds%>%
   slice_head(n=1)%>%
-  select(randomisation_date)
+  select(randomisation_date)%>%
+  .[[1]]
 
 x2 # 19/04/21
 
@@ -382,28 +403,25 @@ participants_meds_restricted<-
   filter(randomisation_date<=x1)
 
 ### save filtered and restricted meds dataset ------
-meds_restricted<-meds%>%
+meds<-meds%>%
   filter(study_number %in% participants_meds_restricted$study_number)
 
-saveRDS(meds_restricted, file = "K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Input datasets/INT07_PCAREMEDS/0049/meds.rds")
-
-rm(meds)
-
+# saveRDS(meds, file = "K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Input datasets/INT07_PCAREMEDS/0049/meds.rds")
 
 participants_meds_restricted%>%
   nrow() # 32780
 
 
 
-meds_restricted%>%nrow() # 6389875
+meds%>%nrow() # 6389875
 
-n_distinct(meds_restricted$study_number)# 32780
+n_distinct(meds$study_number)# 32780
 
 
 #### !Code to load restricted and filtered meds dataset ----------
 
 
-meds<-readRDS(file = "K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Input datasets/INT07_PCAREMEDS/0049/meds.rds")
+# meds<-readRDS(file = "K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Input datasets/INT07_PCAREMEDS/0049/meds.rds")
 
 
 ## counts of overall RECOVERY participants
@@ -423,8 +441,9 @@ rand_dates%>%
 
 ## Counts of prescriptions in the GP dataset -----
 
-gp%>%
+gp_dt%>%
   filter(!is.na(episode_prescription) | !is.na(value1_prescription) | !is.na(value2_prescription))%>%
+  as_tibble()%>%
   nrow() # 3628110
 
 
@@ -455,14 +474,20 @@ c<-participants_meds_restricted%>%
 
 myCol<-brewer.pal(3, "Pastel2")[c(1,2,3)]
 
-venn.diagram(list(a,b,c), 
-             category.names = c("Trial", "GP dataset", "Dispensing dataset"), 
-             filename='Outputs/Transfer/Figures/#1_participants_venn.jpg',
-             fill=myCol,
-             width = 8500,
-             height=7000,
-             cex=2,
-             cat.cex=3)
+list_venn <-list(RECOVERY = a,
+                 GP = b,
+                 Dispensing=c)
+
+ggvenn(list_venn, 
+       fill_alpha= 0.2,
+       set_name_size = 5)+
+  labs(title="Overlap between the overall RECOVERY population recruited in England\nand those represented in the GP and Dispensing datasets")
+
+ggsave("Outputs/Transfer/Figures/venn_diagram.png",
+       dpi="retina",
+       width=15,
+       height=10)
+
 
 # setdiff between GP and RECOVERY
 y<-setdiff(b,a)
@@ -498,12 +523,22 @@ rand_dates%>%
 
 rm(participants_meds, participants_gp, participants_meds_restricted,a,b,c,x1,x2,y,z)
 
+
+
+
+
+
+
+
+
+
 ## Entries per participant---------------------
 
 ### GP dataset---------------------
-p<-gp%>%
+p<-gp_dt%>%
   group_by(study_number)%>%
-  summarise(entries_per_participant=n())
+  summarise(entries_per_participant=n())%>%
+  as_tibble()
 
 skim(p) # summary statistics
 
@@ -513,7 +548,7 @@ p1<-p%>%
   theme_classic()+
   theme(axis.title.x = element_blank())+
   ggtitle("Entries per participant in the GP dataset")+
-  xlim(c(0,7000))+
+  xlim(c(0,9000))+
   ylim(c(0,15000))
 
 p2<-p%>%
@@ -524,13 +559,13 @@ p2<-p%>%
         axis.ticks.y = element_blank(),
         axis.title.x = element_blank())+
   xlab("Entries")+
-  xlim(c(0,7000))
+  xlim(c(0,9000))
 
 f2<-p1+p2+plot_layout(nrow=2, heights=c(2,1))
 
 ### Dispensing dataset---------------------
 
-p<-meds_restricted%>%
+p<-meds%>%
   group_by(study_number)%>%
   summarise(entries_per_participant=n())
 
@@ -542,7 +577,7 @@ p1<-p%>%
   theme_classic()+
   theme(axis.title.x = element_blank())+
   ggtitle("Entries per participant in the Dispensing dataset")+
-  xlim(c(0,7000))+
+  xlim(c(0,9000))+
   ylim(c(0,15000))
 
 p2<-p%>%
@@ -552,7 +587,7 @@ p2<-p%>%
   theme(axis.text.y = element_blank(),
         axis.ticks.y = element_blank())+
   xlab("Entries")+
-  xlim(c(0,7000))
+  xlim(c(0,9000))
 
 f3<-p1+p2+plot_layout(nrow=2, heights=c(2,1))
 
@@ -567,6 +602,213 @@ ggsave("Outputs/Transfer/Figures/Entries_per_participant.png",
 
 rm(p,p1,p2,f2,f3, figure, myCol, rand_dates, withdrew)
 
+
+# Time series  -------------
+
+## GP dataset ------------------------------
+a<-gp_dt%>%
+  select(study_number, date, code)%>%
+  mutate(year=substr(date,1,4), keep=c("unused"))%>%
+  as_tibble()%>%
+  group_by(year)
+
+t1<-a%>%
+  summarise(participants_with_record=n_distinct(study_number))
+
+t1<-a%>%
+  summarise(entries_total=n())%>%
+  add_column(participants_with_record = t1$participants_with_record)
+
+t2<-t1%>%
+  summarise(entries_per_participant=entries_total/participants_with_record)
+
+t1<-cbind(t1,t2)
+
+t2<-a%>%
+  summarise(codes_unique=n_distinct(code))
+
+t1<-cbind(t1,t2$codes_unique)
+
+t1<-t1%>%
+  rename(codes_unique='t2$codes_unique')
+
+t3<-t1%>%
+  summarise(codes_unique_per_participant=codes_unique/participants_with_record)
+
+t1<-cbind(t1,t3)
+
+# add cumulative count of participants with first record
+t4<-gp_dt%>%
+  mutate(year=substr(date,1,4))%>%
+  group_by(study_number)%>%
+  mutate(date=as.Date(date))%>%
+  filter(date==min(date))%>%
+  group_by(year)%>%
+  summarise(participants=n_distinct(study_number))%>%
+  mutate(cumulative_participants=cumsum(participants))%>%
+  select(-participants)%>%
+  as_tibble()
+
+t_gp<-t1%>%left_join(t4, by=c("year"))%>%
+  mutate(codes_unique_per_1000_participants=codes_unique_per_participant*1000)
+
+rm(t1,t2,t3,t4, a)
+
+# generate viz
+
+p1<-t_gp%>%
+  mutate(year=as.numeric(year), .keep=c("unused"))%>%
+  rename('Unique codes' = codes_unique,
+         'Unique codes (per 1000 participants)'=codes_unique_per_1000_participants,
+         'Entries (per participant)'=entries_per_participant,
+         'Participants with a record'=participants_with_record,
+         'Cumulative participant count'=cumulative_participants,
+         'Entries (total)'=entries_total
+  )%>%
+  pivot_longer(cols = c(-"year"),
+               names_to = "key",
+               values_to = "value")%>%
+  filter(complete.cases(.))%>%
+  ggplot(aes(year, value, color=key))+
+  geom_point()+
+  geom_line(aes(group=key))+
+  theme_gray(base_size=20)+
+  labs(y="number", title="")+
+  scale_y_log10(breaks=c(10, 100, 1000, 10000,100000, 1000000, 10000000), labels=scales::comma)+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "none",
+        legend.title=element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank())+
+  labs(title="General temporal patterns",
+       subtitle="GP dataset")+
+  scale_x_continuous(breaks=seq(1800,2020,by=20))
+
+t_gp%<>%
+  mutate(codes_unique_per_1000_participants=codes_unique_per_participant*1000, 
+         year=as.numeric(year), .keep=c("unused"))%>%
+  rename('Unique codes' = codes_unique,
+         'Unique codes (per 1000 participants)'=codes_unique_per_1000_participants,
+         'Entries (per participant)'=entries_per_participant,
+         'Participants with a record'=participants_with_record,
+         'Cumulative participant count'=cumulative_participants,
+         'Entries (total)'=entries_total)%>%
+  pivot_longer(cols = c(-"year"),
+               names_to = "key",
+               values_to = "value")%>%
+  mutate(key_f=factor(key, levels=c('Participants with a record',
+                                    'Cumulative participant count',
+                                    'Entries (total)',
+                                    'Entries (per participant)',
+                                    'Unique codes',
+                                    'Unique codes (per 1000 participants)')))%>%
+  filter(complete.cases(.))
+
+p<-t_gp%>%
+  ggplot(aes(year, value))+
+  geom_point()+
+  geom_line(aes(group=key_f))+
+  geom_vline(xintercept = 2018, linetype="dashed")+
+  theme_gray(base_size=20)+
+  labs(x="Year of record",
+       subtitle="A - Overall temporal patterns in the GP dataset")+
+  theme(legend.position = "none",
+        legend.title=element_blank(),
+        axis.title.y=element_blank())+
+  scale_x_continuous(breaks=seq(1860, 2020, by=c(20)))+
+  facet_wrap(~key_f, nrow=6, scales="free_y")
+
+ggsave("Outputs/Transfer/Figures/General counts timeseries (GP).png",
+       last_plot(),
+       width = 15,
+       height= 15,
+       dpi="retina")
+
+
+## Dispensing dataset -------------------
+
+b<-meds%>%
+  select(study_number,paiddmd_code, processed_period)%>%
+  mutate(year=str_sub(processed_period, 1, 4))%>%
+  group_by(year)
+
+t2<-b%>%
+  summarise(participants_with_record=n_distinct(study_number),
+            entries_total=n(),
+            entries_per_participant=entries_total/participants_with_record,
+            codes_unique=n_distinct(paiddmd_code),
+            codes_unique_per_1000_participants=codes_unique/participants_with_record*1000)
+
+t3<-b%>%
+  select(study_number, year)%>%
+  group_by(study_number)%>%
+  filter(year==min(year))%>%
+  group_by(year)%>%
+  summarise(participants=n_distinct(study_number))%>%
+  mutate(cumulative_participants=cumsum(participants))%>%
+  select(-year, -participants)
+
+t_meds<-cbind(t2,t3)
+
+rm(b)
+# generate viz
+
+t_gp%<>%
+  mutate(Dataset="GP")%>%
+  filter(year>=2018)%>%
+  select(-codes_unique_per_participant)
+
+t_meds%<>%
+  mutate(Dataset="Dispensing")%>%
+  select(year, entries_total, participants_with_record, entries_per_participant, codes_unique, codes_unique_per_1000_participants, cumulative_participants, Dataset)
+
+
+t_joint<-rbind(t_gp, t_meds)
+
+p1<-t_joint%>%
+  rename('Unique codes' = codes_unique,
+         'Unique codes (per 1000 participants)'=codes_unique_per_1000_participants,
+         'Entries (per participant)'=entries_per_participant,
+         'Participants with a record'=participants_with_record,
+         'Cumulative participant count'=cumulative_participants,
+         'Entries (total)'=entries_total)%>%
+  pivot_longer(cols = c(-"year", -"Dataset"),
+               names_to = "key",
+               values_to = "value")%>%
+  mutate(key_f=factor(key, levels=c('Participants with a record',
+                                    'Cumulative participant count',
+                                    'Entries (total)',
+                                    'Entries (per participant)',
+                                    'Unique codes',
+                                    'Unique codes (per 1000 participants)')),
+         Dataset=reorder(Dataset, desc(Dataset)))%>%
+  filter(complete.cases(.))%>%
+  ggplot(aes(year, value, color=Dataset, group=Dataset))+
+  geom_point()+
+  geom_line()+
+  theme_gray(base_size=20)+
+  labs(x="Year of record",
+       subtitle = "B - Temporal patterns in the GP dataset (from 2018)\nand the Dispensing dataset")+
+  theme(legend.position = "bottom",
+        legend.title=element_blank(),
+        axis.title.y=element_blank())+
+  facet_wrap(~key_f, nrow=6, scales="free_y")
+
+
+
+plot<-p+p1
+
+ggsave("Outputs/Transfer/Figures/General counts timeseries (GP + Dispensing).png",
+       last_plot(),
+       width = 15,
+       height= 15,
+       dpi="retina")
+
+rm(p,t,t1,t2, plot_labels, plot, p1, x1, x2, t_joint, t_meds, t_gp)
+
+rm(b)
+
+gc()
 
 
 
@@ -607,13 +849,15 @@ rm(s1,s2, meds_fields, gp_fields)
 colnames(gp)
 head(gp)
 
-gp_rows<-nrow(gp)
-gp_participants<-n_distinct(gp$study_number)
+gp_rows<-gp_dt%>%nrow()%>%as_tibble()%>%.[[1]]
+gp_participants<-gp_dt%>%distinct(study_number)%>%as_tibble()
 
 ### general completeness table-------
 
 completeness_table<-
-  gp%>%
+  gp_dt%>%
+  select(-extract_number, -source_row)%>%
+  as_tibble()%>%
   summarise_all(funs(sum(complete.cases(.))/gp_rows*100))%>%
   t()%>%
   as.data.frame()%>%
@@ -623,7 +867,7 @@ completeness_table$field<-
   row.names(completeness_table)
 
 completeness_table$field%<>%
-  factor(levels=colnames(gp))
+  factor(levels=gp_dt%>%as_tibble()%>%colnames())
 
 row.names(completeness_table)<-NULL
 
@@ -633,7 +877,7 @@ completeness_plot<-
   ggplot(aes(x=as.factor(field), y=value))+
   geom_bar(stat='identity')+
   xlab("Field")+
-  ylab("Completeness rate")+
+  ylab("Completeness rate (%)")+
   #scale_x_discrete(guide=guide_axis(n.dodge=2))+
   theme(axis.text.x = element_text(angle = 30,hjust=1))+
   geom_text(stat='identity', aes(label=round(value, 1)), vjust=-0.5, size=4, hjust=0.5)
@@ -727,6 +971,8 @@ library(raster) # handling geographical mapping data
 library(rgdal) # loading mapping data
 library(mapproj) # map coordinates
 
+gp_dt%>%as_tibble()->gp
+
 skim(gp$lsoa)
 
 gp%>%
@@ -780,6 +1026,7 @@ rand_dates%>%
 
 # more up to date info here: https://lgiu.org/local-government-facts-and-figures-england/, which says:
 # 398 principal (unitary, upper and second-tier) councils in the UK:
+
 # England
 # 24 county councils (plus 8 old counties including London and Metropolitan areas, not used nowadays - but still have codes) - these are second-tier
 # 181 district councils - lower-tier
@@ -787,6 +1034,7 @@ rand_dates%>%
 # 36 metropolitan councils - unitary
 # 58 unitary units - unitary
 # 2 sui generis authorities (city of london and isles of scilly) - unitary
+
 # Wales
 # 22 UAs - unitary
 # Scotland
@@ -808,7 +1056,7 @@ rand_dates%>%
 
 
 #### load lsoa to LAD matches (whole UK) - May 2021------
-# (from https://geoportal.statistics.gov.uk/datasets/postcode-to-output-area-to-lower-layer-super-output-area-to-middle-layer-super-output-area-to-local-authority-district-may-2021-lookup-in-the-uk/about)
+# (from https://geoportal.statistics.gov.uk/datasets/postcode-to-output-area-to-lower-layer-super-output-area-to-middle-layer-super-output-area-to-local-authority-district-may-2021-lookup-in-the-uk/about)s
 lsoa_lad<-read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/UK maps/OA-LSOA-MSOA-LAD-lookup/PCD_OA_LSOA_MSOA_LAD_MAY21_UK_LU.csv", col_types = cols(pcd7 = col_skip(), pcd8 = col_skip(), pcds = col_skip(), dointr = col_skip(),doterm = col_skip(), usertype = col_skip(), oa11cd = col_skip(), msoa11cd = col_skip(),msoa11nm = col_skip(), ladnmw = col_skip()))
 
 lsoa_lad%<>%
@@ -1297,16 +1545,17 @@ gp_dt%>%
 
 
 processed_timestamp_plot<-
-  gp%>%
+  gp_dt%>%
   mutate(processed_timestamp=as.Date(processed_timestamp))%>%
   group_by(processed_timestamp)%>%
   summarize(participants=n_distinct(study_number),
             entries=n())%>%
   pivot_longer(-processed_timestamp, names_to = "key", values_to = "value")%>%
+  as_tibble()%>%
   ggplot(aes(x=processed_timestamp, y=value, group=key))+
   geom_point()+
   geom_line()+
-  xlab("Date of processing")+
+  xlab("Processed_timestamp")+
   ylab("Count")+
   facet_grid(rows=vars(key), scales = "free_y")+
   scale_x_date(date_breaks = "1 month", date_labels = "%b %Y")
@@ -1314,6 +1563,8 @@ processed_timestamp_plot<-
 ggsave("Outputs/Transfer/Figures/processed_timestamp_plot.png",
        last_plot(),
        dpi=700)
+
+ggplotly(processed_timestamp_plot)
 
 rm(processed_timestamp_plot, processing_timestamp_plot)
 
@@ -1420,10 +1671,19 @@ ggsave("Outputs/Transfer/Figures/record_date_timeseries.png",
 # generate date difference table
 date_diff_table<-
   gp_dt%>%
-  select(date, record_date)%>%
-  mutate(date_difference=as.numeric(difftime(record_date, date, units="days")))
+  select(code, date, record_date)%>%
+  mutate(date_difference=as.numeric(difftime(record_date, date, units="days")))%>%
+  as_tibble()
 
 
+date_diff_table%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  filter(Cluster_Category=="Medications")%>%
+  filter(record_date>"2017-12-31")%>%
+  filter(date_difference<0)%>%
+  group_by(Cluster_Desc)%>%
+  summarise(median=median(date_difference, na.rm=T))%>%View()
+  
 
 
 
@@ -1434,11 +1694,13 @@ date_diff_table%>%
   ggplot()+
   geom_abline(intercept = 0, slope=1, colour="dark red", size=1.1)+
   stat_binhex(aes(date, record_date), bins=20, colour="black")+
-  geom_text(stat="binhex", bins=20, aes(date, record_date, label=..count..), show.legend = F, color="white")+
+  geom_text(stat="binhex", bins=20, aes(date, record_date, label=..count..), show.legend = T, color="white")+
   theme_gray(base_size=20)+
   labs(title="Hexagonal density plot for date vs record_date",
        caption="Numbers in each bin depict entry count")+
-  theme(legend.position = "none")
+  theme(legend.position = "bottom",
+        legend.key.width = unit(2, 'cm'))+
+  labs(fill="Counts per bin")
   
 ggsave("Outputs/Transfer/Figures/date_vs_record_date_scatter.png",
        last_plot(),
@@ -1805,16 +2067,30 @@ gp%>%
   nrow() # 12117 entries with this record date
 
 # plot of entries with date > record_date per record year and per cluster category
-x<- gp%>%
+x<- gp_dt%>%
   filter(date>record_date)%>%
   select(study_number, code, date, record_date)%>%
   arrange(record_date)%>%
-  left_join(FSN, by = c("code"= "conceptId"))%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
-  select(study_number, code, date, record_date, term, Cluster_Category)%>%
+  select(study_number, code, date, record_date, Cluster_Category)%>%
   mutate(record_year=str_sub(record_date, 1,4))%>%
   group_by(record_year, Cluster_Category)%>%
-  summarise(n=n())
+  summarise(n=n())%>%
+  as_tibble()
+
+
+x1<-gp_dt%>%
+  select(study_number, code, date, record_date)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  mutate(date_after_record_date= as.factor(if_else(date>record_date, 1,0)))%>%
+  count(date_after_record_date, Cluster_Category)%>%
+  as_tibble()
+
+x1%>%
+  group_by(Cluster_Category)%>%
+  summarise(total=sum(n, na.rm=T),
+            entries = sum(n[date_after_record_date=="1"],  na.rm=T),
+            prop=sum(n[date_after_record_date=="1"],  na.rm=T)/sum(n, na.rm = T)*100)
 
 x%>%
   mutate(record_year=as.numeric(record_year))%>%
@@ -1823,16 +2099,21 @@ x%>%
   geom_point()+
   theme_gray(base_size=20)+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        legend.position = "bottom")+
-  labs(title="Entries with date after record_date, per record year and per cluster category")+
+        legend.position = "none")+
+  labs(title="Entries with date after record_date, per record year and per cluster category",
+       y="Entries")+
   guides(colour = guide_legend(nrow = 4))+
-  scale_x_continuous(breaks=seq(1800,2021, by=10))
+  scale_x_continuous(breaks=seq(1800,2021, by=10))+
+  facet_wrap(~Cluster_Category, 
+             labeller = label_wrap_gen(width = 40))
 
 
 ggsave("Outputs/Transfer/Figures/date_after_record_date_cluster_categories.png",
        dpi="retina",
        width=20,
-       height=8)
+       height=15)
+
+rm(x, x1, date_diff_table)
 
 # investigate those cases in the meds category and after 2000
 
@@ -1915,7 +2196,7 @@ x<- gp_dt%>%
   group_by(Cluster_Desc, record_year, )%>%
   summarise(entries=n(),
             participants=n_distinct(study_number),
-            average_difference=mean(date_difference))%>%
+            average_difference=median(date_difference, na.rm=T))%>%
   as_tibble()
 
 
@@ -1923,30 +2204,40 @@ x<- gp_dt%>%
 
 
 ## plot the above
-x%>%
+p1<-x%>%
   mutate(average_day_difference=as.integer(0-average_difference))%>%
+  rename('Average day difference' = average_day_difference,
+         Entries = entries,
+         Participants = participants)%>%
   select(-average_difference)%>%
   pivot_longer(cols=-c(Cluster_Desc, record_year), names_to="key", values_to="value")%>%
   ggplot(aes(record_year, value, group=Cluster_Desc, color=Cluster_Desc))+
   geom_point()+
   geom_line()+
-  facet_wrap(vars(key), scales = "free")+
+  facet_wrap(vars(key), nrow=3, scales = "free")+
   theme_gray(base_size=20)+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        legend.position = "bottom")+
+        legend.position = "none",
+        axis.title.y=element_blank())+
   guides(colour = guide_legend(nrow = 6))+
-  labs(title="Average day difference (date - record_date), number of entries, and participants for medications with date after record_date",
-       subtitle="Difference over 0 days")
+  labs(
+    # title="Average day difference (date - record_date), number of entries, and participants for medications with date after record_date",
+       subtitle="A - Any period",
+       x="Record year")
 
 ggsave("Outputs/Transfer/Figures/date_vs_record_date_meds_counts.png",
        last_plot(),
        dpi="retina",
-       width=30,
-       height=10)
+       width=20,
+       height=15)
 
 ## zoom in 2018-2020 for average difference only
-x%>%
-  mutate(average_difference=as.integer(0-average_difference))%>%
+p2<-x%>%
+  mutate(average_day_difference=as.integer(0-average_difference))%>%
+  rename('Average day difference' = average_day_difference,
+         Entries = entries,
+         Participants = participants)%>%  
+  select(-average_difference)%>%
   filter(record_year>=2018)%>%
   pivot_longer(cols=-c(Cluster_Desc, record_year), names_to="key", values_to="value")%>%
   ggplot(aes(record_year, value, group=Cluster_Desc, color=Cluster_Desc))+
@@ -1954,20 +2245,48 @@ x%>%
   geom_line()+
   theme_gray(base_size=20)+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        legend.position = "bottom")+
-  xlab("")+
-  ylab("")+
-  facet_wrap(vars(key), scales = "free")+  
-  guides(colour = guide_legend(nrow = 6))+
-  labs(title="Average day difference (date - record_date), number of entries, and participants for medications with date after record_date",
-       subtitle="2018 onwards and difference over 0 days")
+        legend.position = "none",
+        axis.title.y=element_blank())+
+  xlab("Record year")+
+  facet_wrap(vars(key), nrow=3, scales = "free")+  
+  guides(colour = guide_legend(nrow = 10))+
+  labs(
+    #title="Average day difference (date - record_date), number of entries, and participants for medications with date after record_date",
+       subtitle="B - 2018 onwards")+
+  scale_y_continuous(limits=c(0,NA))
   
 
 ggsave("Outputs/Transfer/Figures/date_vs_record_date_meds_2018_counts.png",
        last_plot(),
        dpi="retina",
-       width=30,
-       height=10)
+       width=20,
+       height=15)
+
+p<-p1+p2
+
+ggsave("Outputs/Transfer/Figures/date_vs_record_date_meds__counts_2018_and_before.png",
+       last_plot(),
+       dpi="retina",
+       width=20,
+       height=15)
+
+
+# investigate earlier record of each medication cluster category
+
+gp_dt%>%  
+  select(study_number, code, date, record_date)%>%   
+  filter(!is.na(record_date)|!is.na(date))%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>% 
+  filter(Cluster_Category=="Medications")%>%
+  group_by(Cluster_Desc)%>%
+  summarise(earlier_date = min(date, na.rm = T), earlier_record_date = min(record_date, na.rm=T))%>%
+  as_tibble()
+
+
+
+
+
+
 
 # investigate patterns per gp system supplier
 
@@ -2039,52 +2358,135 @@ x<- gp%>%
             participants=n_distinct(study_number),
             clusters=n_distinct(Cluster_Desc))
 
-### plots of counts per cluster category along time (will use just entries in report) -------------
-x%>%
+
+#### GP cluster groups ----------------------
+
+##### new clusters timeseries -----------
+
+# select first appearance of each code
+x<- gp_dt%>%
+  select(study_number, code, date)%>%
+  mutate(year=substr(date,1,4))%>% 
+  group_by(code)%>% 
+  filter(year==min(year))%>% 
+  distinct(code,year)%>% 
+  arrange(year) 
+
+# join cluster lookup and select first appearance of each cluster
+x<-x%>%
+  left_join(gp_cluster_lookup, by=c("code"= "ConceptId"))%>% 
+  group_by(Cluster_Desc)%>% 
+  filter(year==min(year))%>% 
+  distinct(Cluster_Desc, .keep_all = T)%>% 
+  select(year, code, ConceptId_Description, Cluster_Desc, Cluster_Category) 
+
+# plot
+p<-x%>%
+  select(year, Cluster_Category)%>% 
+  group_by(year, Cluster_Category)%>% 
+  summarise(new_clusters_year=n())%>% 
+  as_tibble()
+
+p%>%
   mutate(year=as.numeric(year))%>%
-  pivot_longer(cols=c(-year, -Cluster_Category), names_to="key", values_to="value")%>%
+  ggplot(aes(year, group=NA))+ 
+  geom_point(aes(y=n, color=Cluster_Category))+ 
+  geom_line(aes(y=n, color=Cluster_Category, group=Cluster_Category))+ 
+  geom_label_repel(data = x%>% 
+                     select(year, Cluster_Category)%>% 
+                     group_by(year, Cluster_Category)%>% 
+                     summarise(n=n())%>% 
+                     mutate(total=sum(n))%>% 
+                     group_by(Cluster_Category)%>%
+                     filter(n == max(n))%>%
+                     as_tibble()%>%
+                     mutate(year=as.numeric(year)), 
+                   aes(x=year, y=n, 
+                       label=paste(Cluster_Category,",", "\n", year, ",", " ", n, " ", "clusters", sep=""), 
+                       fill=Cluster_Category, 
+                       segment.linetype= "dashed",
+                       segment.inflect=T 
+                   ),
+                   nudge_y = 60, 
+                   nudge_x=-50, 
+                   show.legend = F, 
+                   max.overlaps = 25, 
+                   size=6, 
+                   direction="both", 
+                   force_pull = 0   ) +    
+  theme_gray(base_size=20)+
+  theme(axis.text.x = element_text(angle = 90, 
+                                   vjust = 0.5, 
+                                   hjust=1), 
+        legend.position = "none") + 
+  labs(title="First appearance of a new cluster in each cluster category",
+       caption="Labels depict the year with maximum number of new clusters in each category")+
+  scale_x_continuous(breaks=seq(1860,2020,by=20))
+
+
+ggsave("Outputs/Transfer/Figures/GP_clusters_along_time.png",
+       last_plot(),
+       height=8,
+       width=20)
+
+
+
+#### plots of counts per cluster category along time (will use just entries in report) -------------
+gp_dt%>%
+  select(code, date)%>%
+  left_join(gp_cluster_lookup, by=c("code"= "ConceptId"))%>% 
+  mutate(year=as.numeric(str_sub(date, 1,4)))%>%
+  group_by(Cluster_Category, year)%>% 
+  summarise(entries=n())%>%
+  as_tibble()->x1
+
+t<-x1%>%
+  left_join(p%>%mutate(year=as.numeric(year)), by=c("year", "Cluster_Category"))%>%
+  mutate()
+  pivot_longer(-c(year, Cluster_Category), names_to = "key", values_to = "value")
+
+p1<-t%>%
   filter(key=="entries")%>%
   ggplot(aes(year, value, color=Cluster_Category))+
-  geom_point()+
-  geom_line()+
+  geom_point(na.rm=T)+
+  geom_line(na.rm=T, linetype="dashed")+
+  geom_vline(xintercept = 2018, linetype="dashed", alpha=0.3)+
   theme_gray(base_size=20)+
-  # scale_y_log10()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-                             legend.position = "none")+
-  guides(colour = guide_legend(nrow = 4))+
+        legend.position = "none")+
   scale_x_continuous(breaks=seq(1860,2020, by=20))+
-  geom_label_repel(data = x%>%
-                    select(year, Cluster_Category, entries)%>% 
-                    mutate(year=as.numeric(year))%>%
-                    group_by(Cluster_Category)%>%
-                    filter(entries== max(entries)
-                         ), 
-                  aes(x=year, y=entries, 
-                  label=paste(Cluster_Category,",", " ", year, ",", " ", entries, " ", "entries", sep=""), 
-                  fill=Cluster_Category, 
-                  color=NULL,
-                  segment.linetype= "dashed", 
-                  segment.inflect=T),
-                  nudge_y = 600000, 
-                  nudge_x=-100, 
-                  show.legend = F, 
-                  max.overlaps = 25, 
-                  direction="y", 
-                  force_pull = 0,
-                  size=6)+
-  labs(title="Timeseries of number of entries per cluster categories",
-       caption = "Labels depict year with maximum number of entries per category")
+  facet_wrap(~Cluster_Category,
+             labeller = label_wrap_gen(width = 30))+
+  labs(y="",       x="Year of record",       subtitle="B - Entries per year")
+
+p2<-t%>%
+  filter(key=="new_clusters_year",
+         !is.na(value))%>%
+  ggplot(aes(year, value, color=Cluster_Category, group=Cluster_Category))+
+  geom_point(na.rm=T)+
+  geom_line(na.rm=T, linetype="dashed")+
+  geom_vline(xintercept = 2018, linetype="dashed", alpha=0.3)+
+  theme_gray(base_size=20)+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "none")+
+  scale_x_continuous(breaks=seq(1860,2020, by=20))+
+  facet_wrap(~Cluster_Category,
+             labeller = label_wrap_gen(width = 30))+
+  labs(y="",x="",
+       subtitle="A - Number of new clusters per year")
+
+p<-p2/p1
 
 ggsave("Outputs/Transfer/Figures/cluster_categories_entries_timeseries.png",
        last_plot(),
-       height = 8,
+       height = 20,
        width = 20,
        dpi="retina",
        limitsize = F
-       )
+)
 
 
-#### build table with counts of different things per cluster category ----------------
+##### build table with counts of different things per cluster category ----------------
 cluster_category_table<-
   gp%>%
   select(study_number, code, date)%>%
@@ -2100,7 +2502,7 @@ cluster_category_table<-
             clusters=n_distinct(Cluster_Desc),
             codes_per_cluster=unique_codes/clusters,
             avg_per_participant=entries/participants)
-  
+
 ### edit table
 cluster_category_table_1<-
   cluster_category_table%>%
@@ -2117,7 +2519,7 @@ cluster_category_table_1<-
          'Individual clusters'=clusters,
          'Unique codes' = unique_codes,
          'Average number of codes per cluster'=codes_per_cluster
-         )
+  )
 
 ### save table
 write_csv(cluster_category_table_1, "Outputs/Transfer/Tables/Cluster_category_counts_table.csv")
@@ -2137,7 +2539,8 @@ rm(x,cluster_category_table, cluster_category_table_1)
 a<- gp_dt%>%
   select(study_number, code, date)%>%
   left_join(gp_cluster_lookup, by=c("code" = "ConceptId"))%>%
-  select(study_number, code, ConceptId_Description, date, Cluster_Desc, Cluster_Category)
+  select(study_number, code, ConceptId_Description, date, Cluster_Desc, Cluster_Category)%>%
+  as_tibble()
 
 a%>%
   filter(is.na(ConceptId_Description))%>%
@@ -2198,9 +2601,9 @@ FSN%>%
   distinct(conceptId, .keep_all=T)%>%
   select(conceptId, term)%>%
   View() # non-covid vaccinations
-  
-  
-  
+
+
+
 FSN%>%
   filter(conceptId %in% x)%>%
   distinct(conceptId, .keep_all=T)%>%
@@ -2251,16 +2654,23 @@ a%>%
   select(study_number, code, date)%>% # some variables
   mutate(year=str_sub(date, 1,4))%>% # generate year from date
   group_by(year)%>% # group entries by year
-  summarise(n=n())%>% # calculate counts of entries per year
+  summarise(n=n())->p # calculate counts of entries per year
+
+p%>%
+  mutate(year=as.numeric(year))%>%
   ggplot(aes(x=year, y=n))+ # specify variables for plot
   geom_point()+ # scatter plot
   geom_line(aes(group=NA))+ # line chart (and need to specify absence of groups)
-  theme(axis.text.x = element_text(
-    angle = 90, vjust = 0.5, hjust=1))+ # adjust x axis text angle and position 
-  labs(y="entries") # specify y axis label
-
+  theme_gray(base_size=20)+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+ # adjust x axis text angle and position 
+  labs(y="Entries",
+       x="Year of record")+ # specify y axis label
+  scale_x_continuous(breaks=seq(1860, 2020, by=20))
+  
 ggsave("Outputs/Transfer/Figures/unmatched_codes_timeseries.png",
-       last_plot()) # saving plot
+       last_plot(),
+       width=20,
+       height=10) # saving plot
 
 
 #### unmatched codes across GP suppliers ----
@@ -2271,8 +2681,8 @@ gp_dt%>%
                                           "EVA Health Technologies" = "EVA"))%>%
   filter(is.na(code)|code=="0"|code%in%unmatched_codes)%>%
   mutate(unmatched_code_type = as.factor(case_when(is.na(code) ~ "NA",
-                                         code=="0" ~ "0",
-                                         code %in% unmatched_codes ~ "Other incorrect codes")))%>%
+                                                   code=="0" ~ "0",
+                                                   code %in% unmatched_codes ~ "Other incorrect codes")))%>%
   select(study_number, code, date, gp_system_supplier, unmatched_code_type)%>% #some variables
   mutate(gp_system_supplier=as.factor(gp_system_supplier))%>% # specify gp system supplier as a factor
   group_by(gp_system_supplier, unmatched_code_type)%>% # create groups
@@ -2289,9 +2699,9 @@ gp_dt%>%
        title="Unmatched codes per GP system supplier")+
   theme_gray(base_size=20)+
   theme(axis.text.x = element_text(angle = 0),
-                                 legend.position = "right",
-                                 axis.title.x = element_blank(),
-                                 legend.title = element_blank())+
+        legend.position = "right",
+        axis.title.x = element_blank(),
+        legend.title = element_blank())+
   scale_fill_manual(values=c("#7CAE00","#F8766D", "#C77CFF","#00BFC4"))
 
 
@@ -2353,13 +2763,13 @@ county_counts<-
 
 county_counts<-
   gp_dt%>%
-    mutate(gp_system_supplier=recode_factor(gp_system_supplier, 
-                                            "Cegedim Healthcare Solutions" = "Cegedim",
-                                            "EVA Health Technologies" = "EVA"))%>%
-    filter(is.na(code)|code=="0"|code%in%unmatched_codes)%>%
-    mutate(unmatched_code_type = as.factor(case_when(is.na(code) ~ "NA",
-                                                     code=="0" ~ "0",
-                                                     code %in% unmatched_codes ~ "Other incorrect codes")))%>%
+  mutate(gp_system_supplier=recode_factor(gp_system_supplier, 
+                                          "Cegedim Healthcare Solutions" = "Cegedim",
+                                          "EVA Health Technologies" = "EVA"))%>%
+  filter(is.na(code)|code=="0"|code%in%unmatched_codes)%>%
+  mutate(unmatched_code_type = as.factor(case_when(is.na(code) ~ "NA",
+                                                   code=="0" ~ "0",
+                                                   code %in% unmatched_codes ~ "Other incorrect codes")))%>%
   select(study_number, code, lsoa, unmatched_code_type)%>%
   left_join(counties, by="lsoa")%>%
   group_by(county_ua,  unmatched_code_type)%>%
@@ -2443,6 +2853,221 @@ x2%>%
 rm(x2, FSN)
 
 gc()
+
+
+
+
+#### Medication group of clusters ----------
+gp_cluster_lookup%>%filter(Cluster_Category=="Medications")%>%distinct(Cluster_Desc)%>%View()
+
+a<-gp_cluster_lookup%>%filter(Cluster_Category=="Medications")%>%distinct(Cluster_Desc)%>%.[[1]]
+# 36 clusters overall
+
+
+x<-gp%>%
+  select(study_number, code, date)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  select(study_number, code, date, Cluster_Desc, Cluster_Category)%>%
+  filter(Cluster_Category=="Medications")%>%
+  group_by(Cluster_Desc)%>%
+  filter(date==min(date))%>%
+  distinct(Cluster_Desc, .keep_all = T)%>%
+  mutate(year=substr(date,1,4), .keep="unused")%>%
+  arrange(year)%>%
+  select(Cluster_Desc, 'First entry'=year)
+# 35 clusters in the data, but 36 overall
+
+# what is the missing cluster?
+b<-x%>%
+  distinct(Cluster_Desc)%>%
+  .[[1]]
+
+setdiff(a,b) # PCSK9 inhibitors
+
+rm(a,b)
+##### general table ------
+
+
+x1<-gp%>%
+  select(study_number, date, code)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  select(study_number, code, date, Cluster_Desc, Cluster_Category)%>%
+  filter(Cluster_Category=="Medications")%>%
+  group_by(Cluster_Desc)%>%
+  summarise(Codes=n_distinct(code),
+            Entries=n(),
+            Participants=n_distinct(study_number),
+            'Entries per participant'=round(Entries/Participants, digits=0))
+
+x2<-gp%>%
+  select(study_number, date, code)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  select(study_number, code, date, Cluster_Desc, Cluster_Category)%>%
+  filter(Cluster_Category=="Medications")%>%
+  group_by(Cluster_Desc, study_number)%>%
+  filter(n()>1)%>%
+  arrange(date)%>%
+  summarise(average=as.numeric(mean(diff(date))))%>%
+  group_by(Cluster_Desc)%>%
+  summarise('Mean interval between entries (in days)'=round(mean(average), digits=0))
+
+t<-x%>%
+  left_join(x1, by="Cluster_Desc")%>%
+  left_join(x2, by="Cluster_Desc")%>%
+  rename('Cluster' = Cluster_Desc)%>%
+  arrange(Cluster)
+
+write.csv(t, 
+          "Outputs/Transfer/Tables/Medication_clusters_years.csv", 
+          row.names = F)
+
+
+
+##### plots for number of entries and average day difference per medication cluster -------
+
+p1<-gp_dt%>%
+  select(study_number, date, code)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  select(study_number, code, date, Cluster_Desc, Cluster_Category)%>%
+  filter(Cluster_Category=="Medications")%>%
+  group_by(Cluster_Desc, study_number)%>%
+  summarise(Entries=n())%>%
+  group_by(Cluster_Desc)%>%
+  as_tibble()%>%
+  ggplot(aes(x=Entries, y=fct_rev(Cluster_Desc), fill=Cluster_Desc))+
+  geom_density_ridges(scale=1)+
+  coord_cartesian(xlim=c(0,100))+
+  scale_x_continuous(breaks=c(0,10,20,30,40,50,60,70,80,90,100))+
+  theme_gray(base_size=20)+
+  theme(legend.position = "none")+
+  labs(y= "Cluster",
+       x = "Entries per participant",
+       tag="A")
+
+p2<-gp_dt%>%
+  select(study_number, date, code)%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  select(study_number, code, date, Cluster_Desc, Cluster_Category)%>%
+  filter(Cluster_Category=="Medications")%>%
+  group_by(Cluster_Desc, study_number)%>%
+  filter(n()>1)%>%
+  arrange(date)%>%
+  summarise(average=as.numeric(median(diff(date))))%>%
+  group_by(Cluster_Desc)%>%
+  as_tibble()%>%
+  ggplot(aes(x=average, y=fct_rev(Cluster_Desc), fill=Cluster_Desc))+
+  geom_density_ridges(scale=1)+
+  coord_cartesian(xlim=c(0,1500))+
+  scale_x_continuous(breaks=c(0,100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500))+
+  theme_gray(base_size=20)+
+  theme(legend.position = "none",
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())+
+  labs(x = "Median day difference between entries",
+       tag="B")
+
+
+p<- p1 + p2 
+
+p<- p + 
+  plot_annotation(
+    title="Entries per participant and average day difference between consecutive entries for medication clusters"
+  )+
+  theme(plot.title=element_text(size=20))
+
+ggsave("Outputs/Transfer/Figures/Meds_clusters_density.png",
+       p,
+       height=10,
+       width=20)
+
+rm(x, x1, x2, t, p, p1,p2)
+
+
+##### counts per Medication clusters timeseries-----------------
+
+a<-gp_dt%>%
+  select(study_number, date, code)%>%
+  mutate(year=substr(date,1,4), keep=c("unused"))%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  select(study_number, code, year, Cluster_Desc, Cluster_Category)%>%
+  filter(Cluster_Category=="Medications")%>%
+  group_by(year)
+
+t1<-a%>%
+  as_tibble()%>%
+  group_by(Cluster_Desc, year)%>%
+  summarise(entries_total=n(),
+            participants_with_record=n_distinct(study_number),
+            entries_per_participant=entries_total/participants_with_record,
+            codes_unique=n_distinct(code),
+            codes_unique_per_participant=codes_unique/participants_with_record)
+
+
+# add cumulative count of participants with first record
+t2<-gp_dt%>%
+  select(study_number, date, code)%>%
+  mutate(year=substr(date,1,4), keep=c("unused"))%>%
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
+  select(study_number, code, year, Cluster_Desc, Cluster_Category)%>%
+  filter(Cluster_Category=="Medications")%>%
+  group_by(study_number, Cluster_Desc)%>%
+  filter(year==min(year))%>%
+  group_by(year, Cluster_Desc)%>%
+  summarise(participants=n_distinct(study_number))%>%
+  group_by(Cluster_Desc)%>%
+  mutate(cumulative_participants=cumsum(participants))%>%
+  select(-participants)%>%
+  as_tibble()
+
+t<-t1%>%
+  left_join(t2, by=c("Cluster_Desc", "year"))
+
+p<-t%>%
+  rename('Unique codes' = codes_unique,
+         'Unique codes (per participant)'=codes_unique_per_participant,
+         'Entries (per participant)'=entries_per_participant,
+         'Participants with a record'=participants_with_record,
+         'Entries (total)'=entries_total,
+         'Cumulative participants' = cumulative_participants)%>%
+  pivot_longer(cols = c(-"year", -"Cluster_Desc"),
+               names_to = "key",
+               values_to = "value")%>%
+  mutate(year=as.integer(year))%>%
+  ggplot(aes(year, value, color=key))+
+  geom_point()+
+  geom_line(aes(group=key))+
+  theme_gray(base_size=20)+
+  labs(y="number", title="")+
+  scale_y_log10(breaks=c(0,1, 10, 100, 1000, 10000,100000, 1000000, 10000000), labels=scales::comma)+
+  # coord_cartesian(xlim=c(2018,2022))+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        strip.text = element_text(size=15)
+  )+
+  facet_wrap(vars(Cluster_Desc),
+             labeller = label_wrap_gen(width = 50),
+             ncol=5,
+             scales="free")+
+  labs(title = "Temporal trends for medication clusters")
+
+
+ggsave("Outputs/Transfer/Figures/Medication_clusters_timeseries.png",
+       p,
+       height=17,
+       width=25,
+       dpi="retina")
+
+brm(a,p,t,t1,t2)
+
+
+
+
+
+
+
+
+rm(x, a, p1, p2, t, x1, p)
 
 
 
@@ -2697,7 +3322,7 @@ ggsave("Outputs/Transfer/Figures/episode_prescription_coding.png",
 
 
 #### plot of coding per cluster category ------
-x<-gp%>%
+x<-gp_dt%>%
   select(episode_prescription, code)%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
   select(episode_prescription, Cluster_Category)%>%
@@ -2705,7 +3330,8 @@ x<-gp%>%
   summarise(n=n())%>%
   group_by(Cluster_Category)%>%
   mutate(prop=round(n/sum(n)*100, 0))%>%
-  ungroup()
+  ungroup()%>%
+  as_tibble()
 
 x%>%
   ggplot(aes(episode_prescription, n, group=Cluster_Category, fill=episode_prescription))+
@@ -2828,7 +3454,7 @@ ggsave("Outputs/Transfer/Figures/episode_prescription_per_medication_cluster.png
        width = 20,
        dpi="retina")
 
-b#### plot of coding for other clusters of interest -----
+#### plot of coding for other clusters of interest -----
 
 # reload gp_cluster_lookup because previous change to medication cluster names caused some unwanted changes in other cluster names
 
@@ -2980,26 +3606,26 @@ ggsave("Outputs/Transfer/Figures/episode_prescription_per_medication_cluster(per
        width = 20,
        dpi="retina")
 
-#### plot of mean distinct entries and proportion of participants with distrinct entries per cluster ----
+#### plot of mean distinct entries and proportion of participants with distinct entries per cluster ----
 
-x<-gp%>%
+x<-gp_dt%>%
   select(study_number, code, episode_prescription, gp_system_supplier, date)%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
   select(study_number, code, episode_prescription, date, gp_system_supplier, Cluster_Category, Cluster_Desc)%>%
   filter(Cluster_Category == "Medications")%>%
-  filter(is.na(episode_prescription)| episode_prescription!="Acute (one-off)")%>%
-  group_by(study_number, Cluster_Desc, episode_prescription)%>%
+  # filter(is.na(episode_prescription)| episode_prescription!="Acute (one-off)")%>%
   select(-date,-Cluster_Category, -code)
   
 
 x%>%
+  as_tibble()%>%
   group_by(study_number, Cluster_Desc)%>%
   summarise(n=n_distinct(episode_prescription))%>%
   group_by(Cluster_Desc)%>%
   summarise(mean_distinct_entries_per_participant=mean(n),
             participants_with_distinct_entry=n_distinct(study_number[n>1]),
             participants_total = sum(n),
-            proportion=round((participants_with_distinct_entry/participants_total*100),0))->x1
+            proportion=round((participants_with_distinct_entry/participants_total*100),0)) ->x1
 
 
 
@@ -3075,13 +3701,14 @@ write_csv(t, "Outputs/Transfer/Tables/sample_episode_prescription.csv")
 rm(t)
 
 #### plot per gp provider ------
-gp%>%
+gp_dt%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
   select(study_number, code, episode_prescription, gp_system_supplier, date, Cluster_Category)%>%
   filter(Cluster_Category == "Medications")%>%
   count(gp_system_supplier, episode_prescription)%>%
   group_by(gp_system_supplier)%>%
-  mutate(proportion=round(n/sum(n)*100,1))->t
+  mutate(proportion=round(n/sum(n)*100,1))%>%
+  as_tibble()->t
 
 t%>%
   ggplot(aes(episode_prescription, n, fill=episode_prescription))+
@@ -4023,7 +4650,7 @@ rm(x)
 #### simple yet ugly way  ------
 
 t<-gp_dt%>%
-  select(study_number, code, date, gp_system_supplier, episode_prescription, value1_prescription, value2_prescription)%>%
+  select(study_number, code, date, record_date,gp_system_supplier, episode_prescription, value1_prescription, value2_prescription)%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
   filter(Cluster_Category=="Medications")%>%
   as_tibble()%>%
@@ -4032,9 +4659,8 @@ t<-gp_dt%>%
             Participants=n_distinct(study_number),
             'Entries per participant' = round(Entries/Participants,1),
             'Unique codes' = n_distinct(code),
-            'Earliest record' = min(as.numeric(str_sub(date,1,4)))
-  )%>%
-  as_tibble()
+            'Earliest record (date)' = min(as.numeric(str_sub(date,1,4))),
+            'Earliest record (record_date)' = min(as.numeric(str_sub, record_date, 1,4), na.rm=T))
 
 
 t%<>%
@@ -4043,11 +4669,13 @@ t%<>%
          Participants,
          'Entries per participant',
          'Unique codes',
-         'Earliest record')
+         'Earliest record (date)',
+         'Earliest record (record_date)')
 
 
 write_csv(t, "Outputs/Transfer/Tables/medication_clusters_general_table.csv")
 
+rm(t)
 
 # mean interval between entries, value1_prescription (median and completeness), value2_prescription (median and completeness per gp provider)
 
@@ -4175,24 +4803,33 @@ write_csv(t5, "Outputs/Transfer/Tables/medication_clusters_value2_prescription_t
 
 
 #### complicated but nicer way (mmtable) ------
-t1<-gp_dt%>%
-  select(study_number, code, date, gp_system_supplier, episode_prescription, value1_prescription, value2_prescription)%>%
-  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
-  filter(Cluster_Category=="Medications")%>%
-  as_tibble()%>%
-  group_by(Cluster_Desc)%>%
-  summarise(Entries=n(),
+t1<-gp_dt%>% # input dataset that is stored as a data_table (dt)
+  select(study_number, 
+         code, 
+         date, 
+         gp_system_supplier, 
+         episode_prescription, 
+         value1_prescription, 
+         value2_prescription)%>% # selecting some columns from the input dataset
+  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>% # joining code clusters for drug groupings
+  filter(Cluster_Category=="Medications")%>% # filtering for drug clusters only 
+  as_tibble()%>% # converting data table to tibble 
+  group_by(Cluster_Desc)%>% # grouping by cluster
+  summarise(Entries=n(), 
             Participants=n_distinct(study_number),
             'Entries per participant' = Entries/Participants,
             'Unique codes' = n_distinct(code),
             'Earliest record' = min(as.numeric(str_sub(date,1,4)))
-            )%>%
-  pivot_longer(-c(Cluster_Desc), names_to="key", values_to="value")%>%
-  mmtable(value, table_name = "")+
-  header_top(key)+
-  header_left(Cluster_Desc)
+            )%>% # creating some summaries
+  pivot_longer(-c(Cluster_Desc), # pivoting wide to long format since this is better for mmtable and ggplot; code will pivot every column except the cluster name
+               names_to="key",  # column names transformed into a new "key" column
+               values_to="value")%>%  # values in each column transferred to a new "value" column for each key
+  mmtable(value, # first argument specifies what variable should be shown (in my case it is the "value" for each of the "keys")
+          table_name = "")+ # removing table name
+  header_top(key)+ # specify the column names (for my case it is the "key" which contains the name of the columns)
+  header_left(Cluster_Desc) # grouping to be applied on the left side
 
-t2<-gp_dt%>%
+t2<-gp_dt%>% # the structure of the code here is the same as before but had to calculate separately 
   select(study_number, code, date, gp_system_supplier, episode_prescription, value1_prescription, value2_prescription)%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
   filter(Cluster_Category=="Medications")%>%
@@ -4207,9 +4844,19 @@ t2<-gp_dt%>%
   mmtable(value, table_name = "")+
   header_top_left(key)+
   header_left(Cluster_Desc)
-  
-t3<-gp_dt%>%
-  select(study_number, code, date, gp_system_supplier, episode_prescription, value1_prescription, value2_prescription)%>%
+
+t<-t1+t2 # this binds the two tables produced above; colums are automatically ordered alphabetically
+
+
+
+t3<-gp_dt%>% # same as above but this time will calculate number of entries
+  select(study_number, 
+         code, 
+         date, 
+         gp_system_supplier, 
+         episode_prescription, 
+         value1_prescription, 
+         value2_prescription)%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
   filter(Cluster_Category=="Medications")%>%
   group_by(episode_prescription, Cluster_Desc, gp_system_supplier)%>%
@@ -4221,7 +4868,11 @@ t3<-gp_dt%>%
   header_left(Cluster_Desc)
 
 t4<-gp_dt%>%
-  select(study_number, code, date, gp_system_supplier,value1_prescription)%>%
+  select(study_number, 
+         code, 
+         date, 
+         gp_system_supplier,
+         value1_prescription)%>%
   left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
   filter(Cluster_Category=="Medications")%>%
   group_by(Cluster_Desc, gp_system_supplier)%>%
@@ -4248,498 +4899,6 @@ t5<-gp_dt%>%
   header_top_left(gp_system_supplier)+
   header_left(Cluster_Desc)
   
-t<-t1+t2
-
-
 tt<-t3+t4+t5
 
-## Dispensing dataset -----------
 
-
-colnames(meds_restricted)
-
-skim(meds_restricted)
-
-
-
-
-
-
-
-
-
-
-
-
-# Time series  -------------
-
-## GP dataset ------------------------------
-a<-gp%>%
-  select(study_number, date, code)%>%
-  mutate(year=substr(date,1,4), keep=c("unused"))%>%
-  group_by(year)
-
-t1<-a%>%
-  summarise(participants_with_record=n_distinct(study_number))
-
-t1<-a%>%
-  summarise(entries_total=n())%>%
-  add_column(participants_with_record = t1$participants_with_record)
-
-t2<-t1%>%
-  summarise(entries_per_participant=entries_total/participants_with_record)
-
-t1<-cbind(t1,t2)
-
-t2<-a%>%
-  summarise(codes_unique=n_distinct(code))
-
-t1<-cbind(t1,t2$codes_unique)
-
-t1<-t1%>%
-  rename(codes_unique='t2$codes_unique')
-
-t3<-t1%>%
-  summarise(codes_unique_per_participant=codes_unique/participants_with_record)
-
-t1<-cbind(t1,t3)
-
-# add cumulative count of participants with first record
-t4<-gp%>%
-  mutate(year=substr(date,1,4))%>%
-  group_by(study_number)%>%
-  mutate(date=as.Date(date))%>%
-  filter(date==min(date))%>%
-  group_by(year)%>%
-  summarise(participants=n_distinct(study_number))%>%
-  mutate(cumulative_participants=cumsum(participants))%>%
-  select(-participants)
-
-t<-t1%>%left_join(t4, by=c("year"))
-
-rm(t1,t2,t3,t4)
-
-# generate viz
-
-p1<-t%>%
-  mutate(codes_unique_per_1000_participants=codes_unique_per_participant*1000, 
-         year=as.numeric(year), .keep=c("unused"))%>%
-  rename('Unique codes' = codes_unique,
-         'Unique codes (per 1000 participants)'=codes_unique_per_1000_participants,
-         'Entries (per participant)'=entries_per_participant,
-         'Participants with a record'=participants_with_record,
-         'Cumulative participant count'=cumulative_participants,
-         'Entries (total)'=entries_total
-         )%>%
-  pivot_longer(cols = c(-"year"),
-               names_to = "key",
-               values_to = "value")%>%
-  filter(complete.cases(.))%>%
-  ggplot(aes(year, value, color=key))+
-  geom_point()+
-  geom_line(aes(group=key))+
-  theme_gray(base_size=20)+
-  labs(y="number", title="")+
-  scale_y_log10(breaks=c(10, 100, 1000, 10000,100000, 1000000, 10000000), labels=scales::comma)+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        legend.position = "none",
-        legend.title=element_blank(),
-        axis.title.x=element_blank(),
-        axis.title.y=element_blank())+
-  labs(title="General temporal patterns",
-       subtitle="GP dataset")+
-  scale_x_continuous(breaks=seq(1800,2020,by=20))
-
-
-
-
-## Dispensing dataset -------------------
-
-b<-meds%>%
-  select(study_number,paiddmd_code, processed_period)%>%
-  group_by(processed_period)
-
-t1<-b%>%
-  summarise(participants_with_record=n_distinct(study_number),
-            entries_total=n(),
-            entries_per_participant=entries_total/participants_with_record,
-            codes_unique=n_distinct(paiddmd_code),
-            codes_unique_per_1000_participants=codes_unique/participants_with_record*1000)
-
-t2<-b%>%
-  select(study_number, processed_period)%>%
-  group_by(study_number)%>%
-  filter(processed_period==min(processed_period))%>%
-  group_by(processed_period)%>%
-  summarise(participants=n_distinct(study_number))%>%
-  mutate(cumulative_participants=cumsum(participants))%>%
-  select(-processed_period, -participants)
-
-t<-cbind(t1,t2)
-
-# generate viz
-
-p2<-t%>%
-  mutate(date=paste(processed_period, "01"), .keep=c("unused"))%>%
-  mutate(date=as.Date(date, format="%Y%m%d"))%>%
-  rename('Unique codes' = codes_unique,
-         'Unique codes (per 1000 participants)'=codes_unique_per_1000_participants,
-         'Entries (per participant)'=entries_per_participant,
-         'Participants with a record'=participants_with_record,
-         'Cumulative participant count'=cumulative_participants,
-         'Entries (total)'=entries_total)%>%
-  pivot_longer(cols = c(-"date"),
-               names_to = "key",
-               values_to = "value")%>%
-  filter(complete.cases(.))%>%
-  ggplot(aes(date, value, color=key))+
-  geom_point()+
-  geom_line(aes(group=key))+
-  theme_gray(base_size=20)+
-  labs(y="number", title="")+
-  scale_y_log10(breaks=c(10, 100, 1000, 10000,100000, 1000000, 10000000), labels=scales::comma)+
-  theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1),
-        legend.position = "bottom",
-        legend.title=element_blank(),
-        axis.title.x = element_blank(),
-        axis.title.y=element_blank())+
-  labs(subtitle="Dispensing dataset")+
-  scale_x_date(date_breaks = "1 month", date_labels = "%b %Y")
-  
-
-p<-p1/p2
-
-
-
-
-
-ggsave("Outputs/Transfer/Figures/General counts timeseries (GP + Dispensing).png",
-       last_plot(),
-       width = 15,
-       height= 15,
-       dpi="retina")
-
-rm(p,t,t1,t2, plot_labels)
-
-rm(b)
-
-gc()
-
-# GP cluster groups ----------------------
-
-## new clusters timeseries -----------
-
-# select first appearance of each code
-x<- gp_dt%>%
-  select(study_number, code, date)%>% # select some columns only
-  mutate(year=substr(date,1,4))%>% # transform date into year
-  group_by(code)%>% # group outputs by code
-  filter(year==min(year))%>% # select first appearance of a code
-  distinct(code,year)%>% # select each distinct code in each year
-  arrange(year) # sort by year (ascending)
-
-# join cluster lookup and select first appearance of each cluster
-x<-x%>%
-  left_join(gp_cluster_lookup, by=c("code"= "ConceptId"))%>% # join cluster lookup table
-  group_by(Cluster_Desc)%>% # grouping by cluster names
-  filter(year==min(year))%>% # select first appearance of each cluster
-  distinct(Cluster_Desc, .keep_all = T)%>% # select only one entry per year for each cluster
-  select(year, code, ConceptId_Description, Cluster_Desc, Cluster_Category) # select some columns only
-
-# plot
-p<-x%>%
-  select(year, Cluster_Category)%>% # select variables of interest
-  group_by(year, Cluster_Category)%>% # group outputs
-  summarise(n=n())%>% # calculate counts per cluster category and year
-  # mutate(total=sum(n))%>% # this calculated overall counts (not grouped)
-  as_tibble()
-  
-p%>%
-  mutate(year=as.numeric(year))%>%
-  ggplot(aes(year, group=NA))+ # pass x variable to ggplot, specify no grouping variable for geom_point
-  # geom_point(aes(y=total))+ # scatter plot for total counts
-  # geom_line(aes(y=total))+ # line chart for total counts
-  geom_point(aes(y=n, color=Cluster_Category))+ # scatter plot for counts per cluste category
-  geom_line(aes(y=n, color=Cluster_Category, group=Cluster_Category))+ # add line chart for same variables
-  geom_label_repel(data = x%>% # specify data for labels, which will be for the max value per cluster (need to repeat it as calcualtions above were done for the plot only and not saved as objects in the environement)
-                     select(year, Cluster_Category)%>% # some variables only 
-                     group_by(year, Cluster_Category)%>% # grouping as above
-                     summarise(n=n())%>% # calculating counts as above
-                     mutate(total=sum(n))%>% # calculating total counts per year
-                     group_by(Cluster_Category)%>% # removing year grouping
-                     filter(n == max(n))%>%
-                     as_tibble()%>%
-                     mutate(year=as.numeric(year)), # select year with max counts per cluster category
-                   aes(x=year, y=n, # specify variables to be used in the labels (year for x axis, n calculated above for y position)
-                       label=paste(Cluster_Category,",", "\n", year, ",", " ", n, " ", "clusters", sep=""), # speecify text in the label; want to include the name of the categoery, the count, and the year
-                       fill=Cluster_Category, # fill labels with unique colours per group
-                       segment.linetype= "dashed", # dashed lines connecting label to point
-                       # segment.curvature = -0.1, # this allowed for angled lines
-                       segment.inflect=T # adds inflection point if necessary
-                   ),
-                   nudge_y = 60, # nudge labels vertically
-                   nudge_x=-50, # nudge labels horizontally
-                   show.legend = F, # no legend for labels
-                   max.overlaps = 25, # allow for a large number of overlapping labels given number of groups (otherwise wouldn't be printed)
-                   size=6, # could edit size if desired
-                   direction="both", # direction of repel
-                   force_pull = 0 # remove pull between label and point
-  ) +    
-  theme_gray(base_size=20)+ # specify B&W theme and base size
-  theme(axis.text.x = element_text(angle = 90, # angle of x axis text
-                                   vjust = 0.5, # vertical adjustment
-                                   hjust=1), # horizontal adjustment
-        legend.position = "none") + # remove legend (as already in labels)
-labs(title="First appearance of a new cluster in each cluster category",
-     caption="Labels depict the year with maximum number of new clusters in each category")+
-  scale_x_continuous(breaks=seq(1860,2020,by=20))
-
-
-ggsave("Outputs/Transfer/Figures/GP_clusters_along_time.png",
-       last_plot(),
-       height=8,
-       width=20)
-
-rm(p)
-
-
-## Medication group of clusters ----------
-gp_cluster_lookup%>%filter(Cluster_Category=="Medications")%>%distinct(Cluster_Desc)%>%View()
-
-a<-gp_cluster_lookup%>%filter(Cluster_Category=="Medications")%>%distinct(Cluster_Desc)%>%.[[1]]
-# 36 clusters overall
-
-
-x<-gp%>%
-  select(study_number, code, date)%>%
-  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
-  select(study_number, code, date, Cluster_Desc, Cluster_Category)%>%
-  filter(Cluster_Category=="Medications")%>%
-  group_by(Cluster_Desc)%>%
-  filter(date==min(date))%>%
-  distinct(Cluster_Desc, .keep_all = T)%>%
-  mutate(year=substr(date,1,4), .keep="unused")%>%
-  arrange(year)%>%
-  select(Cluster_Desc, 'First entry'=year)
-# 35 clusters in the data, but 36 overall
-
-# what is the missing cluster?
-b<-x%>%
-  distinct(Cluster_Desc)%>%
-  .[[1]]
-
-setdiff(a,b) # PCSK9 inhibitors
-
-rm(a,b)
-### general table ------
-
-
-x1<-gp%>%
-  select(study_number, date, code)%>%
-  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
-  select(study_number, code, date, Cluster_Desc, Cluster_Category)%>%
-  filter(Cluster_Category=="Medications")%>%
-  group_by(Cluster_Desc)%>%
-  summarise(Codes=n_distinct(code),
-            Entries=n(),
-            Participants=n_distinct(study_number),
-            'Entries per participant'=round(Entries/Participants, digits=0))
-
-x2<-gp%>%
-  select(study_number, date, code)%>%
-  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
-  select(study_number, code, date, Cluster_Desc, Cluster_Category)%>%
-  filter(Cluster_Category=="Medications")%>%
-  group_by(Cluster_Desc, study_number)%>%
-  filter(n()>1)%>%
-  arrange(date)%>%
-  summarise(average=as.numeric(mean(diff(date))))%>%
-  group_by(Cluster_Desc)%>%
-  summarise('Mean interval between entries (in days)'=round(mean(average), digits=0))
-
-t<-x%>%
-  left_join(x1, by="Cluster_Desc")%>%
-  left_join(x2, by="Cluster_Desc")%>%
-  rename('Cluster' = Cluster_Desc)%>%
-  arrange(Cluster)
-
-write.csv(t, 
-          "Outputs/Transfer/Tables/Medication_clusters_years.csv", 
-          row.names = F)
-
-
-
-### plots for number of entries and average day difference per medication cluster -------
-
-p1<-gp_dt%>%
-  select(study_number, date, code)%>%
-  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
-  select(study_number, code, date, Cluster_Desc, Cluster_Category)%>%
-  filter(Cluster_Category=="Medications")%>%
-  group_by(Cluster_Desc, study_number)%>%
-  summarise(Entries=n())%>%
-  group_by(Cluster_Desc)%>%
-  as_tibble()%>%
-  ggplot(aes(x=Entries, y=fct_rev(Cluster_Desc), fill=Cluster_Desc))+
-  geom_density_ridges(scale=1)+
-  coord_cartesian(xlim=c(0,100))+
-  scale_x_continuous(breaks=c(0,10,20,30,40,50,60,70,80,90,100))+
-  theme_gray(base_size=20)+
-  theme(legend.position = "none")+
-  labs(y= "Cluster",
-       x = "Entries per participant",
-       tag="A")
-
-p2<-gp_dt%>%
-  select(study_number, date, code)%>%
-  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
-  select(study_number, code, date, Cluster_Desc, Cluster_Category)%>%
-  filter(Cluster_Category=="Medications")%>%
-  group_by(Cluster_Desc, study_number)%>%
-  filter(n()>1)%>%
-  arrange(date)%>%
-  summarise(average=as.numeric(median(diff(date))))%>%
-  group_by(Cluster_Desc)%>%
-  as_tibble()%>%
-  ggplot(aes(x=average, y=fct_rev(Cluster_Desc), fill=Cluster_Desc))+
-  geom_density_ridges(scale=1)+
-  coord_cartesian(xlim=c(0,1500))+
-  scale_x_continuous(breaks=c(0,100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500))+
-  theme_gray(base_size=20)+
-  theme(legend.position = "none",
-        axis.title.y = element_blank(),
-        axis.text.y = element_blank())+
-  labs(x = "Median day difference between entries",
-       tag="B")
-
-
-p<- p1 + p2 
-
-p<- p + 
-  plot_annotation(
-  title="Entries per participant and average day difference between consecutive entries for medication clusters"
-)+
-  theme(plot.title=element_text(size=20))
-
-ggsave("Outputs/Transfer/Figures/Meds_clusters_density.png",
-       p,
-       height=10,
-       width=20)
-
-rm(x, x1, x2, t, p, p1,p2)
-
-
-### counts per Medication clusters timeseries-----------------
-
-a<-gp_dt%>%
-  select(study_number, date, code)%>%
-  mutate(year=substr(date,1,4), keep=c("unused"))%>%
-  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
-  select(study_number, code, year, Cluster_Desc, Cluster_Category)%>%
-  filter(Cluster_Category=="Medications")%>%
-  group_by(year)
-
-t1<-a%>%
-  as_tibble()%>%
-  group_by(Cluster_Desc, year)%>%
-  summarise(entries_total=n(),
-            participants_with_record=n_distinct(study_number),
-            entries_per_participant=entries_total/participants_with_record,
-            codes_unique=n_distinct(code),
-            codes_unique_per_participant=codes_unique/participants_with_record)
-
-
-# add cumulative count of participants with first record
-t2<-gp_dt%>%
-  select(study_number, date, code)%>%
-  mutate(year=substr(date,1,4), keep=c("unused"))%>%
-  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
-  select(study_number, code, year, Cluster_Desc, Cluster_Category)%>%
-  filter(Cluster_Category=="Medications")%>%
-  group_by(study_number, Cluster_Desc)%>%
-  filter(year==min(year))%>%
-  group_by(year, Cluster_Desc)%>%
-  summarise(participants=n_distinct(study_number))%>%
-  group_by(Cluster_Desc)%>%
-  mutate(cumulative_participants=cumsum(participants))%>%
-  select(-participants)%>%
-  as_tibble()
-
-t<-t1%>%
-  left_join(t2, by=c("Cluster_Desc", "year"))
-
-p<-t%>%
-  rename('Unique codes' = codes_unique,
-         'Unique codes (per participant)'=codes_unique_per_participant,
-         'Entries (per participant)'=entries_per_participant,
-         'Participants with a record'=participants_with_record,
-         'Entries (total)'=entries_total,
-         'Cumulative participants' = cumulative_participants)%>%
-  pivot_longer(cols = c(-"year", -"Cluster_Desc"),
-               names_to = "key",
-               values_to = "value")%>%
-  mutate(year=as.integer(year))%>%
-  ggplot(aes(year, value, color=key))+
-  geom_point()+
-  geom_line(aes(group=key))+
-  theme_gray(base_size=20)+
-  labs(y="number", title="")+
-  scale_y_log10(breaks=c(0,1, 10, 100, 1000, 10000,100000, 1000000, 10000000), labels=scales::comma)+
-  # coord_cartesian(xlim=c(2018,2022))+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        legend.position = "bottom",
-        legend.title = element_blank(),
-        strip.text = element_text(size=15)
-  )+
-  facet_wrap(vars(Cluster_Desc),
-             labeller = label_wrap_gen(width = 50),
-             ncol=5,
-             scales="free")+
-  labs(title = "Temporal trends for medication clusters")
-
-
-ggsave("Outputs/Transfer/Figures/Medication_clusters_timeseries.png",
-       p,
-       height=17,
-       width=25,
-       dpi="retina")
-
-brm(a,p,t,t1,t2)
-
-
-
-
-
-
-
-
-
-### (not used )medication cluster timeseries --------
-
-x<- gp_dt%>%
-  select(study_number, date, code)%>%
-  mutate(year=substr(date,1,4), keep=c("unused"))%>%
-  left_join(gp_cluster_lookup, by=c("code"="ConceptId"))%>%
-  select(study_number, code, year, Cluster_Desc, Cluster_Category)%>%
-  filter(Cluster_Category=="Medications")%>%
-  group_by(year, Cluster_Desc)%>%
-  summarise(Entries=n(),
-            Participants=n_distinct(study_number))%>%
-  pivot_longer(cols = c(-"year", -"Cluster_Desc"),
-               names_to = "key",
-               values_to = "value")%>%
-  as_tibble()%>%
-  mutate(year=as.numeric(year))
-
-x%>%
-  ggplot(aes(year, value, color=Cluster_Desc))+
-  geom_point()+
-  geom_line()+
-  facet_wrap(~key, scales="free")+
-  theme_gray(base_size=20)+
-  theme(legend.position = "bottom")
-
-ggsave("Outputs/Transfer/Figures/Medication_clusters_timeseries.png",
-       p,
-       height=20,
-       width=30)

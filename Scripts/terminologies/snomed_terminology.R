@@ -43,9 +43,10 @@ write_csv(descriptions, "Tools/SNOMED terminology/Aggregated/rdiagnosislist/desc
 FSN <- as_tibble(SNOMED[["DESCRIPTION"]])%>%
   filter(typeId=="900000000000003001")%>%
   group_by(conceptId)%>%
-  filter(effectiveTime==max(effectiveTime))%>%
+  filter(effectiveTime==max(effectiveTime),
+         active==TRUE)%>%
   ungroup()
 
 # save FSN table ---------------
-write_csv(FSN, "Tools/SNOMED terminology/Lookup_tables/FSN.csv")
+write_csv(FSN, "K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/SNOMED terminology/Lookup_tables/FSN.csv")
 

@@ -65,6 +65,10 @@ formulation_dictionary <- read_excel("Tools/primcare_meds_reference-data_24-03-2
                                      sheet = "Ref - Formulation")
 
 
+# Load dmd terminology lookup--------------------------
+
+dmd_code_types_lookup <- read_csv("K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOVERY_gui_analysis/Tools/dm+d/dmd_code_types_lookup.csv", col_types = cols(code = col_character()))
+
 
 
 # Load restricted and filtered meds dataset ----------
@@ -76,7 +80,6 @@ meds<-readRDS(file = "K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/RECOV
 meds_rows <- nrow(meds)
 meds_cols <- colnames(meds)
 meds_participants <- meds%>%distinct(study_number)%>%.[[1]]
-
 
 meds_dt <- lazy_dt(meds)
 
@@ -229,40 +232,39 @@ a<- meds_dt%>%
 # so on average each prescription has 2.34 items
 
 
-## plot histogram of items per prescription
+## barchart of items per prescription --------
 b<- meds_dt%>%
-  select(bsa_prescription_id)%>%
-  count(bsa_prescription_id)%>%
+  select(bsa_prescription_id, eps_prescription_indicator)%>%
+  count(bsa_prescription_id, eps_prescription_indicator)%>%
   as_tibble()
 
-plot<- 
-  b%>%
-  ggplot(aes(n))+
-  geom_histogram(bins=50)+
+b%>%
+  count(n, eps_prescription_indicator)%>%
+  mutate(eps_prescription_indicator = fct_recode(as.factor(eps_prescription_indicator),
+                                                    "Yes" = "1",
+                                                    "No" = "0"))%>%
+  ggplot(aes(n, nn, fill=as.factor(n)))+
+  facet_wrap(~eps_prescription_indicator)+
+  geom_bar(stat='identity')+
   theme_gray(base_size = 20)+
   labs(x="Entries",
        y="Counts",
-       title="Histogram of entries per bsa_prescription_id")+
-  geom_vline(aes(xintercept = median(n)), col="dark red")+
-  geom_vline(aes(xintercept = mean(n)), col="dark blue")+
-  geom_text(aes(x=median(n), y=900000, label=paste0("Median: ", round(median(n),1))),
-            hjust=-0.1,
-            size=6,
-            colour="dark red")+
-  geom_text(aes(x=mean(n), y=600000, label=paste0("Mean: ", round(mean(n),1))),
-            hjust=-0.1,
-            size=6,
-            colour="dark blue")
+       title="Entries per distinct bsa_prescription_id",
+       subtitle="Grouped by eps_prescription_indicator",
+       caption="eps_prescription_indicator indicates whether the dispensing event is associated with an Electronic Prescribing Service message")+
+  geom_text(aes(label=nn),
+            vjust=-0.2,
+            size=5)+
+  scale_x_continuous(limits=c(0,32),breaks=seq(0,32, by=1))+
+  theme(legend.position = "none")
 
-ggsave("Outputs/Figures/dispensing_exploration/bsa_prescription_histogram.png",
+ggsave("Outputs/Figures/dispensing_exploration/bsa_prescription_counts_per_eps_prescription_indicator.png",
        last_plot(),
        width=20,
        height=8,
        dpi="retina")
 
-b%>%count(n)
-
-rm(b, plot)
+rm(b)
 
 # eps_prescription_id -----------------
 
@@ -276,32 +278,26 @@ a<- meds_dt%>%
 # 2280880 unique entries (for 6389336 rows) - different from bsa_prescription
 # so on average each prescription has 2.80 items
 
-## plot histogram of items per prescription
+## items per prescription-------
 b<- meds_dt%>%
   select(eps_prescription_id)%>%
   count(eps_prescription_id)%>%
   as_tibble()
 
-plot<- 
-  b%>%
-  ggplot(aes(n))+
-  geom_histogram(bins=50)+
+b%>%
+  count(n)%>%
+  ggplot(aes(n, nn, fill=as.factor(n)))+
+  geom_bar(stat='identity')+
   theme_gray(base_size = 20)+
   labs(x="Entries",
        y="Counts",
-       title="Histogram of entries per eps_prescription_id",
-       caption="Excluding 924,658 NA rows")+
-  geom_vline(aes(xintercept = median(n)), col="dark red")+
-  geom_vline(aes(xintercept = mean(n)), col="dark blue")+
-  geom_text(aes(x=10, y=900000, label=paste0("Median: ", round(median(n),1))),
-            hjust=-0.1,
-            size=6,
-            colour="dark red")+
-  geom_text(aes(x=10, y=600000, label=paste0("Mean: ", round(mean(n),1))),
-            hjust=-0.1,
-            size=6,
-            colour="dark blue")+
-  xlim(0,13)
+       title="Entries per eps_prescription_id")+
+  geom_text(aes(label=nn),
+            vjust=-0.2,
+            size=5)+
+  scale_x_continuous(limits=c(NA,13),breaks=seq(0,13, by=1))+
+  theme(legend.position = "none")
+
 
 ggsave("Outputs/Figures/dispensing_exploration/eps_prescription_histogram.png",
        last_plot(),
@@ -310,6 +306,89 @@ ggsave("Outputs/Figures/dispensing_exploration/eps_prescription_histogram.png",
        dpi="retina")
 
 b%>%count(n)
+
+rm(b)
+
+
+
+
+## distinct eps_prescription_ids per processing period------
+meds_dt%>%
+  distinct(study_number, processing_period_date, eps_prescription_id)%>%
+  as_tibble()->x
+
+x%>%
+  group_by(study_number, processing_period_date)%>%
+  count()->x1
+
+m<-median(x1$n)
+
+x1%>%
+  ggplot(aes(n))+
+  geom_histogram(bins=100, color="black")+
+  labs(title="Number of distinct eps_prescription_id entries per processing period and participant",
+       x="Entries",
+       y="Count")+
+  theme_gray(base_size=20)+
+  geom_vline(aes(xintercept = m), col="dark red")+
+  geom_text(aes(x=m, y =200000, label=paste0("Median: ", round(m,1))),
+            hjust=-0.1,
+            size=6)
+  
+ggsave("Outputs/Figures/dispensing_exploration/eps_prescription_id_per_period.png",
+       width=25,
+       height=10,
+       dpi="retina")
+
+
+## does the same eps_prescription_id show up in different processing_periods? -------
+
+x%>%
+  group_by(eps_prescription_id)%>%
+  count()->x2
+  
+x2%>%
+  ggplot(aes(n))+
+  geom_histogram(bins=100, color="black")+
+  labs(title="Number of distinct processing periods per eps_prescription_id",
+       x="Entries",
+       y="Count")+
+  theme_gray(base_size=20)
+  # all but 3 processed in the same month
+
+rm(m, x,x1,x2)
+
+## distinct bsa_prescription_id per eps_prescription_id --------
+
+meds_dt%>%
+  select(study_number, eps_prescription_id, bsa_prescription_id)%>%
+  as_tibble()->x # example is 1000253 and A4A7EA02-52B0-03FE-E053-031011AC834D
+
+x%>%
+  group_by(eps_prescription_id)%>%
+  summarise(distinct=n_distinct(bsa_prescription_id))%>%View()
+
+
+## distinct eps_prescription_id per bsa_prescription_id --------
+
+meds_dt%>%
+  select(study_number, eps_prescription_id, bsa_prescription_id)%>%
+  group_by(bsa_prescription_id)%>%
+  summarise(n=n_distinct(eps_prescription_id))%>%
+  as_tibble()->x
+
+x%>%filter(!is.na(eps_prescription_id))%>%arrange(desc(n))%>%View()
+
+
+
+# explore one participant of interest
+meds%>%
+  select(study_number, eps_prescription_id, bsa_prescription_id, processing_period_date, prescribed_bnf_code, prescribed_bnf_name, prescribed_quantity, paid_quantity)%>%
+  filter(study_number=="1000253")->z
+
+rm(z,x)
+
+
 
 
 # item_id ---------
@@ -335,6 +414,7 @@ ggsave("Outputs/Figures/dispensing_exploration/item_id_barchart.png",
        width=20,
        height=8,
        dpi="retina")
+
 
 # eps_prescription_indicator ------
 
@@ -402,12 +482,137 @@ ggsave("Outputs/Figures/dispensing_exploration/eps_prescription_indicator_timese
        dpi = "retina")
 
 
+## per prescriber type -------
+
+meds_dt%>%
+  select(eps_prescription_indicator, prescriber_type)%>%
+  count(eps_prescription_indicator, prescriber_type)%>%
+  group_by(prescriber_type)%>%
+  mutate(prop=round(n/sum(n)*100,0))%>%
+  as_tibble()->x
+
+x%<>%  
+  mutate(eps_prescription_indicator=recode(factor(eps_prescription_indicator), '1' = "Yes", '0' = "No"),
+         prescriber_type = recode(factor(prescriber_type), '15' = "GP", '18' = "Hospital doctor", '33'="Nurse",'48'= "Additional prescriber"))
+  
+x%>%
+  ggplot(aes(eps_prescription_indicator, n, fill=eps_prescription_indicator))+
+  geom_bar(stat='identity', width=0.5)+
+  geom_text(aes(label=paste0(n," (",prop, "%)")), vjust=-1, size=6)+
+  ylab("Entries")+
+  facet_wrap(~prescriber_type, scales="free", ncol=4)+
+  labs(title="Distribution of eps_prescription_indicator per prescriber_type")+
+  theme_gray(base_size=20)+
+  theme(legend.position="none")+
+  scale_y_continuous(expand=expansion(c(0,0.2)))
+
+ggsave("Outputs/Figures/dispensing_exploration/eps_prescription_indicator_per_prescriber.png", 
+       last_plot(),
+       width=20, 
+       height=10,
+       dpi = "retina")
+
+
+## per cost centre subtype-------
+
+
+## cost_centre_subtype ----
+
+meds_dt%>%
+  count(cost_centre_sub_type, eps_prescription_indicator)%>%
+  group_by(cost_centre_sub_type)%>%
+  mutate(prop=round(n/sum(n)*100,1))%>%
+  as_tibble()%>%
+  mutate(eps_prescription_indicator=as.factor(eps_prescription_indicator),
+         cost_centre_sub_type=as.factor(cost_centre_sub_type))%>%
+  mutate(eps_prescription_indicator=recode(factor(eps_prescription_indicator), '1' = "Yes", '0' = "No"),
+         cost_centre_sub_type = recode(cost_centre_sub_type,
+                                       '01' = "Walk-in centre",
+                                       '02' = "Out-of-hours service",
+                                       '03' = "Walk-in Centre and Out-of-hours service",
+                                       '04' = "GP practice",
+                                       '05' = "Health and Justice",
+                                       '06' = "Private controlled drug practice",
+                                       '07' = "Other",
+                                       '08' = "Public health service",
+                                       '09' = "Community health service",
+                                       '10'= "Hospital service",
+                                       '11'= "Optometry service",
+                                       '12'= "Urgent and emergency care",
+                                       '13'= "Hospice",
+                                       '14'= "Care/nursing home"))->x
+
+x%>%
+  ggplot(aes(eps_prescription_indicator, n, fill=eps_prescription_indicator))+
+  geom_bar(stat='identity', width=0.5)+
+  geom_text(aes(label=paste0(n," (",prop, "%)")), vjust=-0.2, size=5)+
+  ylab("Entries")+
+  facet_wrap(~cost_centre_sub_type, scales="free_y")+
+  labs(title="Distribution of eps_prescription_indicator per cost_centre_sub_type")+
+  theme_gray(base_size=20)+
+  theme(legend.position="bottom",
+        axis.title.x=element_blank())+
+  scale_y_continuous(expand=expansion(c(0,0.3)))
+
+ggsave("Outputs/Figures/dispensing_exploration/eps_prescription_indicator_per_cost_centre_sub_type.png", 
+       last_plot(),
+       width=20, 
+       height=10,
+       dpi = "retina")
+
+### along time -------
+
+meds_dt%>%
+  count(cost_centre_sub_type, eps_prescription_indicator, processing_period_date)%>%
+  group_by(cost_centre_sub_type, processing_period_date)%>%
+  mutate(prop=round(n/sum(n)*100,1))%>%
+  as_tibble()%>%
+  mutate(eps_prescription_indicator=as.factor(eps_prescription_indicator),
+         cost_centre_sub_type=as.factor(cost_centre_sub_type))%>%
+  mutate(eps_prescription_indicator=recode(factor(eps_prescription_indicator), '1' = "Yes", '0' = "No"),
+         cost_centre_sub_type = recode(cost_centre_sub_type,
+                                       '01' = "Walk-in centre",
+                                       '02' = "Out-of-hours service",
+                                       '03' = "Walk-in Centre and Out-of-hours service",
+                                       '04' = "GP practice",
+                                       '05' = "Health and Justice",
+                                       '06' = "Private controlled drug practice",
+                                       '07' = "Other",
+                                       '08' = "Public health service",
+                                       '09' = "Community health service",
+                                       '10'= "Hospital service",
+                                       '11'= "Optometry service",
+                                       '12'= "Urgent and emergency care",
+                                       '13'= "Hospice",
+                                       '14'= "Care/nursing home"))->x
+
+x%>%
+  ggplot(aes(processing_period_date, n, color=eps_prescription_indicator))+
+  geom_point()+
+  geom_line()+
+  # geom_text(aes(label=paste0(n," (",prop, "%)")), vjust=-0.2, size=5)+
+  ylab("Entries")+
+  facet_wrap(~cost_centre_sub_type, scales="free_y")+
+  labs(title="Distribution of eps_prescription_indicator per cost_centre_sub_type, along time")+
+  theme_gray(base_size=20)+
+  theme(legend.position="bottom",
+        axis.title.x=element_blank())+
+  scale_y_continuous(limits = (c(0,NA)))
+
+ggsave("Outputs/Figures/dispensing_exploration/eps_prescription_indicator_per_cost_centre_sub_type_timeseries.png", 
+       last_plot(),
+       width=20, 
+       height=10,
+       dpi = "retina")
+
+
 # not_dispensed_indicator ---------
 meds_dt%>%
   count(not_dispensed_indicator)
 
 plot_labels<-c("Dispensed", "Not dispensed")
 
+## plot ------
 p1<-meds_dt%>%
   select(not_dispensed_indicator)%>%
   count(not_dispensed_indicator)%>%
@@ -428,6 +633,7 @@ ggsave("Outputs/Figures/dispensing_exploration/not_dispensed_indicator.png",
        height=10,
        dpi = "retina")
 
+## dispensed vs non-dispensed items per prescription ------
 meds_dt%>%
   select(not_dispensed_indicator, bsa_prescription_id)%>%
   group_by(bsa_prescription_id)%>%
@@ -436,7 +642,7 @@ meds_dt%>%
   group_by(bsa_prescription_id)%>%
   mutate(Y=if_else(is.na(Y),0,Y))%>%
   mutate(Proportion=round(N/(N+Y)*100,0))%>%
-  as_tibble()->x # dispensed vs non-dispensed items per prescription
+  as_tibble()->x 
 
 x%>% 
   count(Y)%>%
@@ -446,6 +652,332 @@ x%>%
 write_csv(a, "Outputs/Tables/non_dispensed_items_per_prescription.csv")
 
 rm(a,p1,x)
+
+## along time -------
+
+meds_dt%>%
+  select(not_dispensed_indicator, processing_period_date)%>%
+  group_by(not_dispensed_indicator, processing_period_date)%>%
+  count()%>%
+  as_tibble()->x
+
+plot_labels<-c("Dispensed", "Not dispensed")
+
+x%>%
+  ggplot()+
+  geom_point(aes(processing_period_date, n, group=not_dispensed_indicator, color=not_dispensed_indicator))+
+  geom_line(aes(processing_period_date, n, group=not_dispensed_indicator, color=not_dispensed_indicator))+
+  geom_text(aes(label=n, x=processing_period_date, y=n), vjust=-1, size=4)+
+  # scale_x_discrete(labels=plot_labels)+
+  ylab("Entries")+
+  labs(title="Distribution of not_dispensed_indicator along time")+
+  theme_gray(base_size=20)+
+  theme(axis.title.x=element_blank(),
+        legend.position="bottom")
+
+ggsave("Outputs/Figures/dispensing_exploration/not_dispensed_indicator_timeseries.png", 
+       last_plot(),
+       width=20, 
+       height=10,
+       dpi = "retina")
+
+## per institution ------------------
+
+meds_dt%>%
+  select(not_dispensed_indicator, dispensed_pharmacy_type)%>%
+  count(dispensed_pharmacy_type, not_dispensed_indicator)%>%
+  group_by(dispensed_pharmacy_type)%>%
+  mutate(prop=round(n/sum(n)*100,1))%>%
+  as_tibble()%>%
+  mutate(not_dispensed_indicator=as.factor(not_dispensed_indicator),
+         dispensed_pharmacy_type=as.factor(dispensed_pharmacy_type))%>%
+  mutate(not_dispensed_indicator = recode(not_dispensed_indicator, 
+                                   'N' = "Dispensed", 
+                                   'Y' = "Not dispensed"),
+         dispensed_pharmacy_type = recode(dispensed_pharmacy_type,
+                                          '7' = "GP practice",
+                                          '8' =  "Contractor"))->x
+
+
+x%>%
+  ggplot(aes(not_dispensed_indicator, n, fill=not_dispensed_indicator))+
+  geom_col(position = position_dodge2(width = 1, preserve = "single"))+
+  geom_text(aes(label=paste0(n,"\n(",prop, "%)")), size=4,
+            position = position_dodge2(width = 0.9, preserve='single'),
+            vjust=-0.2
+  )+
+  ylab("Entries")+
+  labs(title="Distribution of not_dispensed_indicator",
+       subtitle = "per dispensed_pharmacy_type")+
+  theme_gray(base_size=20)+
+  theme(# axis.text.x=element_blank(),
+        axis.title.x=element_blank(),
+        # axis.ticks.x=element_blank(),
+        legend.position="none",
+        legend.title=element_blank())+
+  facet_wrap(~dispensed_pharmacy_type, scales="free")+
+  scale_y_continuous(expand=expansion(c(0,0.1)))
+
+ggsave("Outputs/Figures/dispensing_exploration/not_dispensed_indicator_per_dispensing_type.png", 
+       last_plot(),
+       width=20, 
+       height=10,
+       dpi = "retina")
+
+
+
+## distinct entries in the same eps_prescription_id
+
+meds_dt%>%
+  select(eps_prescription_id, not_dispensed_indicator)%>%
+  group_by(eps_prescription_id)%>%
+  summarise(distinct=case_when(n_distinct(not_dispensed_indicator)==1 & sum(not_dispensed_indicator=="Y")>0 ~ "not_dispensed_only", 
+                               n_distinct(not_dispensed_indicator)==1 & sum(not_dispensed_indicator=="N")>0 ~ "dispensed_only", 
+                               n_distinct(not_dispensed_indicator)==2 ~ "both"))%>%
+  count(distinct)%>%
+  as_tibble()
+
+
+
+
+
+
+
+# processing_period ------
+
+## average interval between prescriptions ----------------------
+
+meds_dt%>%
+  select(study_number, processing_period_date, bsa_prescription_id, item_id, prescribed_bnf_code, prescribed_bnf_name)%>%
+  group_by(study_number)%>%
+  distinct(processing_period_date, .keep_all=T)%>%
+  arrange(study_number, processing_period_date)%>%
+  group_by(study_number)%>%
+  summarise(diff(processing_period_date, lag=1L))%>%
+  as_tibble()->x
+  
+x%>%
+  rename(day_difference = "diff(processing_period_date, lag = 1L)")%>%
+  ggplot(aes(day_difference))+
+  geom_histogram(bins=100)+
+  labs(x="Day difference",
+       title="Day difference between consecutive monthly processing periods, per participant")+
+  theme_gray(base_size = 20)+
+  stat_bin(aes(y=..count.., label=..count..), geom="text", vjust=-1, size=6)+
+  scale_x_continuous(breaks=seq(0,1000, by=100))
+
+ggsave("Outputs/Figures/dispensing_exploration/date_difference_time_periods.png",
+       width=25,
+       height=10,
+       dpi="retina")
+
+rm(x)
+
+
+## calculate number of distinct bsa_ids per participant per period ---------------
+meds_dt%>%
+  distinct(study_number, bsa_prescription_id, processing_period_date)%>%
+  group_by(study_number, processing_period_date)%>%
+  count()%>%
+  as_tibble()->x
+
+x%>%
+  ggplot(aes(n))+
+  geom_histogram(bins=100)+
+  theme_gray(base_size=20)+
+  theme(axis.title.x = element_blank())+
+  labs(title="Number of distinct prescriptions per participant and processing period")->p1
+
+x%>%
+  ggplot(aes(n))+
+  geom_boxplot()+
+  labs(x="Distinct bsa_prescription_id")+
+  theme_gray(base_size=20)+
+  theme(axis.text.y=element_blank(),
+        axis.ticks.y = element_blank())->p2
+
+
+p1 + p2 + plot_layout(nrow = 2, heights = c(2, 1))
+
+ggsave("Outputs/Figures/dispensing_exploration/distinct_prescriptions_participant_period.png", 
+       last_plot(),
+       width=20, 
+       height=10,
+       dpi = "retina")
+
+### along time -------------------
+
+x%>%
+  ggplot(aes(processing_period_date, n, group=processing_period_date))+
+  geom_boxplot()+
+  geom_point(data=x%>%filter(study_number %in% c("1359832",
+                                                 "1065841",
+                                                 "1359381",
+                                                 "1120190",
+                                                 "1244580",
+                                                 "1208117")), aes(color=study_number))+
+  theme_gray(base_size = 20)+
+  theme(legend.position = "bottom")+
+  labs(x="Processing period",
+       y="Distint bsa_prescription_id",
+       title="Number of distinct prescriptions per processing period",
+       caption="Plot shows boxplots aggregated per period\nNumbers for some individual outliers are depicted in color")
+
+ggsave("Outputs/Figures/dispensing_exploration/distinct_prescriptions_participant_period_timeseries.png", 
+       last_plot(),
+       width=20, 
+       height=10,
+       dpi = "retina")
+  
+## quantity prescribed vs number of prescriptions ------------------
+meds_dt%>%
+  distinct(study_number, bsa_prescription_id, processing_period_date, .keep_all = T)%>%
+  group_by(study_number, processing_period_date)%>%
+  summarise(entries=n_distinct(bsa_prescription_id),
+            avg_quantity = median(paid_quantity, na.rm = T))%>%
+  as_tibble()->x
+
+p1<-x%>%
+  ggplot(aes(avg_quantity, entries))+
+  geom_point(alpha=0.5)+
+  labs(x="Quantity prescribed per period (median)",
+       subtitle="Overall",
+       y="Entries per period")+
+  theme_gray(base_size=20)
+  
+p2<-x%>%
+  filter(avg_quantity<median(avg_quantity, na.rm = T))%>%
+  ggplot(aes(avg_quantity, entries))+
+  geom_point(alpha=0.5)+
+  labs(subtitle="Entries with quantity average below median (30)",
+         x="Quantity prescribed per period (median)")+
+  theme_gray(base_size=20)+
+  theme(axis.title.y=element_blank())
+
+p<-p1+p2 +plot_annotation(title="Quantity prescribed vs number of entries per participant and per period"
+)+  theme(plot.title = element_text(size=30))
+
+  
+ggsave("Outputs/Figures/dispensing_exploration/distinct_prescriptions_participant_period_vs_quantity.png", 
+       last_plot(),
+       width=20, 
+       height=10,
+       dpi = "retina")
+
+
+# investigate some cases
+
+x%>%filter(entries>50)%>%select(study_number)%>%.[[1]]->l
+
+meds_dt%>%filter(study_number%in%l)%>%as_tibble()->x
+
+x%>%group_by(processing_period_date, study_number)%>%filter(n_distinct(bsa_prescription_id)>30)%>%arrange(study_number, processing_period_date, prescribed_bnf_name)%>%View()
+
+## many duplicate drug entries with different prescription_ids but same code and date
+
+meds_dt%>%
+  select(study_number, processing_period_date, bsa_prescription_id, item_id, prescribed_bnf_code, prescribed_bnf_name, paid_quantity, prescribed_quantity, row_number)%>%
+  group_by(study_number, processing_period_date)%>%
+  filter(n_distinct(bsa_prescription_id)>1)%>%
+  as_tibble()->x
+ # total number is 5956211
+nrow(x)/meds_rows*100 # 93%
+
+x%>%
+  group_by(study_number, processing_period_date, prescribed_bnf_code)%>%
+  filter(n()>1)%>%
+  filter(prescribed_bnf_code!="190201000AABLBL")%>%
+  arrange(study_number, processing_period_date, prescribed_bnf_code)%>%
+  View()
+
+
+
+## number of entries with same bnf code per processing period -------
+
+meds_dt%>%
+  select(study_number, processing_period_date, prescribed_bnf_code)%>%
+  group_by(study_number, processing_period_date, prescribed_bnf_code)%>%
+  count()%>%
+  as_tibble()->x
+
+x%>%
+  count(n)%>%
+  ggplot(aes(n, nn, fill=as.factor(n)))+
+  geom_bar(stat='identity')+
+  theme_gray(base_size = 20)+
+  labs(x="Entries",
+       y="Counts",
+       title="Number of entries of the same BNF code per individual processing period")+
+  geom_text(aes(label=nn),
+            vjust=-0.2,
+            size=4)+
+  scale_x_continuous(limits=c(0,50),breaks=seq(0,50, by=1))+
+  theme(legend.position = "none")
+
+ggsave("Outputs/Figures/dispensing_exploration/bnf_code_entries_per_period.png",
+       width=25,
+       height=10,
+       dpi="retina")
+
+
+
+## and per bsa_prescription_id ---------------
+
+meds_dt%>%
+  select(study_number, bsa_prescription_id, prescribed_bnf_code)%>%
+  group_by(study_number, bsa_prescription_id, prescribed_bnf_code)%>%
+  count()%>%
+  as_tibble()->x
+
+x%>%
+  count(n)%>%
+  ggplot(aes(n, nn, fill=as.factor(n)))+
+  geom_bar(stat='identity')+
+  theme_gray(base_size = 20)+
+  labs(x="Entries",
+       y="Counts",
+       title="Number of entries of the same BNF code per bsa_prescription_id")+
+  geom_text(aes(label=nn),
+            vjust=-0.2,
+            size=4)+
+  scale_x_continuous(limits=c(0,35),breaks=seq(0,35, by=1))+
+  theme(legend.position = "none")
+
+ggsave("Outputs/Figures/dispensing_exploration/bnf_code_entries_per_bsa_prescription_id.png",
+       width=25,
+       height=10,
+       dpi="retina")
+
+# what are those with more than one?
+
+meds_dt%>%
+  select(study_number, bsa_prescription_id, prescribed_bnf_code, row_number)%>%
+  group_by(study_number, bsa_prescription_id, prescribed_bnf_code)%>%
+  count()%>%
+  filter(n>1)%>%
+  as_tibble()->x
+
+x%>%select(bsa_prescription_id)%>%.[[1]]->l # list of bsa_prescription_ids with more than one entry of the same BNF code
+
+meds_dt%>%
+  select(study_number, bsa_prescription_id, eps_prescription_id, processing_period_date, item_id, not_dispensed_indicator, prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, prescribed_supplier_name, prescribed_quantity, paid_quantity, row_number)%>%
+  filter(bsa_prescription_id %in% l)%>%
+  left_join(FSN%>%select(conceptId, term), by=c("prescribeddmd_code"= "conceptId"))%>%
+  select(study_number, bsa_prescription_id, eps_prescription_id, processing_period_date, item_id, not_dispensed_indicator, prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, term,prescribed_supplier_name, prescribed_quantity, paid_quantity, row_number)%>%
+  as_tibble()->x # dataset filtered by list above and joined with snomed descriptions
+
+x%>%
+  filter(prescribed_bnf_code!="190201000AABLBL")%>% # removing exception handlers
+  arrange(study_number, processing_period_date, bsa_prescription_id)%>%
+  View()
+
+x%>%
+  filter(prescribed_bnf_code!="190201000AABLBL")%>% # removing exception handlers
+  group_by(bsa_prescription_id, prescribeddmd_code)%>%
+  filter(n_distinct(prescribed_quantity)>1)%>%
+  arrange(study_number, processing_period_date, bsa_prescription_id)%>%
+  View()
+
 
 
 
@@ -560,7 +1092,6 @@ x%>%
         legend.position="none")+
   facet_wrap(~cost_centre_type, scales="free")+
   scale_y_continuous(expand=expansion(c(0,0.1)))
-# scale_color_viridis()
 
 ggsave("Outputs/Figures/dispensing_exploration/cost_centre_sub_type_per_cost_centre_type.png", 
        last_plot(),
@@ -673,6 +1204,58 @@ ggsave("Outputs/Figures/dispensing_exploration/private_prescription_indicator.pn
        width=20, 
        height=10,
        dpi = "retina")
+
+# prescribeddmd_code and paiddmd_code ----------
+
+# types of prescriptions
+meds_dt%>%
+  select(prescribeddmd_code)%>%
+  left_join(dmd_code_types_lookup, by=c("prescribeddmd_code" = "code"))%>%
+  count(code_type)%>%
+  mutate(prop=round(n/sum(n)*100, 1))%>%
+  as_tibble()->x
+
+x%<>%
+  mutate(field="Prescribed")
+
+meds_dt%>%
+  select(paiddmd_code)%>%
+  left_join(dmd_code_types_lookup, by=c("paiddmd_code" = "code"))%>%
+  count(code_type)%>%
+  mutate(prop=round(n/sum(n)*100, 1))%>%
+  as_tibble()->x1
+
+x1%<>%
+  mutate(field="Paid")
+
+t<-rbind(x, x1)
+
+t%>%
+  mutate(code_type = recode(code_type,
+                            'AMPP' = "Actual Medicinal Product Pack (AMPP)",
+                            'VMPP' = "Virtual Medicinal Product Pack (VMPP)"))%>%
+  mutate(field=reorder(field, desc(field)))%>%
+  ggplot(aes(code_type, n, fill=code_type))+
+  geom_bar(stat='identity')+
+  geom_text(aes(label=paste0(n,"\n(",prop, "%)")), vjust=-0.1, size=6)+
+  theme_gray(base_size=20)+
+  theme(legend.position = "bottom",
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.title=element_blank())+
+  labs(x="Code type",
+       y = "Entries",
+       title="Dictionary of Medicines and Devices (dm+d) code level usage",
+       caption="AMPP represents non-generic prescribing of proprietary products\nVMPP represents generic prescribing (of either generic or proprietary products)")+
+  scale_y_continuous(expand=expansion(c(0,0.2)))+
+  facet_wrap(~field)
+
+ggsave("Outputs/Figures/dispensing_exploration/dmd_code_level_frequency.png", 
+       last_plot(),
+       width=20, 
+       height=10,
+       dpi = "retina")
+
 
 
 # prescribed_formulation -----------------
@@ -792,6 +1375,21 @@ meds_dt%>%
   as_tibble()%>%
   View()
 
+meds_dt%>%
+  select(prescribed_medicine_strength, prescribed_bnf_name, prescribed_formulation)%>%
+  filter(is.na(prescribed_medicine_strength))%>%
+  left_join(formulation_dictionary, by=c("prescribed_formulation" = "FormulationCode"))%>%
+  select(prescribed_formulation, FormulationCodeDescription)%>%
+  group_by(FormulationCodeDescription)%>%
+  count()%>%
+  arrange(desc(n))%>%
+  as_tibble()%>%
+  View()
+  
+
+
+
+
 # prescribed_quantity ---------
 meds_dt%>%
   select(prescribed_quantity)%>%
@@ -833,6 +1431,7 @@ ggsave("Outputs/Figures/dispensing_exploration/prescribed_quantity_hist_boxplot.
        dpi = "retina")
 
 rm(p,p1,p2, x)
+
 
 
 ## per formulation -----------------
@@ -1259,10 +1858,17 @@ rm(a)
 ## paid_bnf_code vs prescribed ----
 
 meds_dt%>%
-  select(processing_period_date, prescribed_bnf_code, prescribed_bnf_name, prescribed_supplier_name, paid_bnf_code, paid_bnf_name, prescribed_formulation, row_number)%>%
+  select(processing_period_date, 
+         prescribed_bnf_code, 
+         prescribed_bnf_name, 
+         prescribed_supplier_name, 
+         paid_bnf_code, 
+         paid_bnf_name, 
+         prescribed_formulation, 
+         row_number)%>%
   filter(prescribed_bnf_code != paid_bnf_code)%>%
   left_join(formulation_dictionary, by = c("prescribed_formulation" = "FormulationCode"))%>%
-  as_tibble()->a
+  as_tibble()->a # a contains all rows where prescribed bnf and paid bnf are different
 
 a%>%
   count(processing_period_date, formulation_group)%>%
@@ -1312,9 +1918,17 @@ a%>%
 ## paiddmd_code ----------
 
 meds_dt%>%
-  select(prescribeddmd_code, prescribed_bnf_name, prescribed_supplier_name, paiddmd_code, paid_bnf_name, row_number)%>%
+  select(prescribeddmd_code, 
+         prescribed_bnf_code, 
+         prescribed_bnf_name, 
+         prescribed_supplier_name, 
+         paiddmd_code,
+         paid_bnf_code,
+         paid_bnf_name, 
+         row_number, 
+         processing_period_date)%>%
   filter(prescribeddmd_code != paiddmd_code)%>%
-  as_tibble()->a
+  as_tibble()->a # divergent paid and prescribed dmd codes
 
 a%>%
   filter(!row_number%in%divergent_rows)%>%
@@ -1324,6 +1938,129 @@ a%>%
 a%>%
   filter(!row_number%in%divergent_rows)%>%
   View()
+
+a%>%
+  left_join(FSN%>%select(conceptId, term), by=c("prescribeddmd_code" = "conceptId"))%>%
+  left_join(FSN%>%select(conceptId, term), by=c("paiddmd_code" = "conceptId"))%>%
+  left_join(dmd_code_types_lookup%>%select(code_type, code), by=c("prescribeddmd_code" = "code"))%>%
+  left_join(dmd_code_types_lookup%>%select(code_type, code), by=c("paiddmd_code" = "code"))%>%
+  select(row_number, 
+         prescribed_bnf_code,
+         prescribed_bnf_name,
+         prescribeddmd_code, 
+         term.x, 
+         code_type.x, 
+         paid_bnf_code,
+         paid_bnf_name,
+         paiddmd_code, 
+         term.y, 
+         code_type.y, 
+         processing_period_date)%>%
+  filter(!row_number %in% divergent_rows)%>%
+  distinct(prescribeddmd_code, paiddmd_code, .keep_all=T)%>%
+  View()
+
+
+meds_dt%>%
+  select(prescribeddmd_code, 
+         prescribed_bnf_code, 
+         prescribed_bnf_name, 
+         prescribed_supplier_name, 
+         paiddmd_code,
+         paid_bnf_code,
+         paid_bnf_name, 
+         row_number, 
+         processing_period_date,
+         eps_prescription_indicator)%>%
+  left_join(FSN%>%select(conceptId, term), by=c("prescribeddmd_code" = "conceptId"))%>%
+  left_join(FSN%>%select(conceptId, term), by=c("paiddmd_code" = "conceptId"))%>%
+  left_join(dmd_code_types_lookup%>%select(code_type, code), by=c("prescribeddmd_code" = "code"))%>%
+  left_join(dmd_code_types_lookup%>%select(code_type, code), by=c("paiddmd_code" = "code"))%>%
+  select(row_number, 
+         prescribed_bnf_code, 
+         prescribed_bnf_name,
+         prescribeddmd_code, 
+         term.x, 
+         code_type.x, 
+         paid_bnf_code, 
+         paid_bnf_name,
+         paiddmd_code, 
+         term.y, 
+         code_type.y, 
+         processing_period_date, 
+         eps_prescription_indicator)%>%
+  as_tibble()->x
+
+
+x%<>%
+  mutate(cross_coding = case_when((code_type.x=="AMPP" & code_type.y=="AMPP") ~ "AMPP-AMPP",
+                                  (code_type.x=="VMPP" & code_type.y=="VMPP") ~ "VMPP-VMPP",
+                                  (code_type.x=="VMPP" & code_type.y=="AMPP") ~ "VMPP-AMPP",
+                                  (code_type.x=="AMPP" & code_type.y=="VMPP") ~ "AMPP-AMPP"))
+
+
+x%>%
+  group_by(processing_period_date, cross_coding)%>%
+  summarise(Entries=n())%>%
+  group_by(processing_period_date)%>%
+  mutate(Proportion = round(Entries/sum(Entries)*100,2))->t
+  
+x%>%
+  filter(prescribeddmd_code != paiddmd_code)%>%
+  distinct(prescribeddmd_code, paiddmd_code, .keep_all = T)%>%
+  View()
+
+t%>%
+  ggplot(aes(processing_period_date, Proportion))+
+  geom_point(aes(color=cross_coding))+
+  geom_line(aes(color=cross_coding))+
+  geom_text(data=t%>%filter(!is.na(cross_coding)), 
+            aes(label=paste0(Proportion, "%"), color=cross_coding), vjust=-1.5, size=4)+
+  theme_gray(base_size = 20)+
+  theme(legend.position="bottom")+
+  labs(title="Relationship between prescribed and paid dm+d code levels",
+       x="Processing period",
+       y="Proportion of total entries per period",
+       caption="NA represent non-valid prescribed or paid dm+d codes",
+       color=NULL)+
+  scale_y_continuous(expand=expansion(c(0,0.2)))
+
+ggsave("Outputs/Figures/dispensing_exploration/prescribed_vs_paid_dmd_code_timeseries_AMPP_VMPP.png", 
+       last_plot(),
+       width=25, 
+       height=10,
+       dpi = "retina")  
+
+x%>%
+  filter(cross_coding=="VMPP-VMPP"|cross_coding=="VMPP-AMPP")%>%
+  group_by(prescribeddmd_code)%>%
+  mutate(divergent = n_distinct(cross_coding))%>%
+  filter(divergent>1)%>%
+  mutate(divergent_rows=if_else(row_number%in%divergent_rows, 1, 0))%>%
+  arrange(prescribed_bnf_code,desc(divergent_rows), cross_coding, desc(processing_period_date))->x1
+  
+x1%>%
+  distinct(prescribeddmd_code)%>%
+  nrow() # only 271 codes  distinct snomed codes
+
+x1%>%
+  distinct(paiddmd_code)%>%
+  nrow() # split into 574 codes 
+
+x1%>%
+  distinct(prescribed_bnf_code)%>%
+  nrow() # only 234 distinct bnf codes 
+
+
+x1%>%
+  distinct(paid_bnf_code)%>%
+  nrow() # split into 462 bnf codes
+
+
+
+
+rm(a,t,x)
+
 
 ## paid_formulation ------
 meds_dt%>%
@@ -1372,3 +2109,86 @@ dispensing_codes%<>%
   select(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, prescribeddmd_term=term, paid_bnf_code, paid_bnf_name, paiddmd_code)%>%
   left_join(FSN, by=c("paiddmd_code" = "conceptId"))%>%
   select(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, prescribeddmd_term, paid_bnf_code, paid_bnf_name, paiddmd_code, paiddmd_term=term)
+
+# investigate patterns of inferrence from prescribed to dispensed codes -------
+
+meds_dt%>%
+  select(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, paid_bnf_code, paid_bnf_name, paiddmd_code)%>%
+  filter(str_detect(prescribed_bnf_name, "Amoxicillin 500mg capsules"))%>%
+  count(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, paid_bnf_code, paid_bnf_name, paiddmd_code)%>%
+  left_join(FSN%>%select(conceptId, term), by=c("prescribeddmd_code"="conceptId"))%>%
+  rename(prescribeddmd_name = term)%>%
+  left_join(FSN%>%select(conceptId, term), by=c("paiddmd_code"="conceptId"))%>%
+  rename(paiddmd_name = term)%>%
+  select(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, prescribeddmd_name,paid_bnf_code, paid_bnf_name, paiddmd_code, paiddmd_name, n)%>%
+  arrange(desc(n))%>%
+  as_tibble()%>%
+  View()
+
+
+meds_dt%>%
+  select(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, paid_bnf_code, paid_bnf_name, paiddmd_code)%>%
+  filter(str_detect(prescribed_bnf_name, "Paracetamol 500mg tablets"))%>%
+  count(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, paid_bnf_code, paid_bnf_name, paiddmd_code)%>%
+  left_join(FSN%>%select(conceptId, term), by=c("prescribeddmd_code"="conceptId"))%>%
+  rename(prescribeddmd_name = term)%>%
+  left_join(FSN%>%select(conceptId, term), by=c("paiddmd_code"="conceptId"))%>%
+  rename(paiddmd_name = term)%>%
+  select(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, prescribeddmd_name,paid_bnf_code, paid_bnf_name, paiddmd_code, paiddmd_name, n)%>%
+  arrange(desc(n))%>%
+  as_tibble()%>%
+  View()
+
+meds_dt%>%
+  select(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, paid_bnf_code, paid_bnf_name, paiddmd_code)%>%
+  filter(str_detect(prescribed_bnf_name, "Apixaban 5mg")|str_detect(prescribed_bnf_name, "Eliquis 5mg"))%>%
+  count(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, paid_bnf_code, paid_bnf_name, paiddmd_code)%>%
+  left_join(FSN%>%select(conceptId, term), by=c("prescribeddmd_code"="conceptId"))%>%
+  rename(prescribeddmd_name = term)%>%
+  left_join(FSN%>%select(conceptId, term), by=c("paiddmd_code"="conceptId"))%>%
+  rename(paiddmd_name = term)%>%
+  select(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, prescribeddmd_name,paid_bnf_code, paid_bnf_name, paiddmd_code, paiddmd_name, n)%>%
+  arrange(desc(n))%>%
+  as_tibble()%>%
+  View()
+
+meds_dt%>%
+  select(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, paid_bnf_code, paid_bnf_name, paiddmd_code)%>%
+  filter(prescribed_bnf_code %in% c("0302000C0BPABBF", 
+                                    "0302000C0BJABBF",
+                                    "0302000C0BTACBF",
+                                    "0302000C0BSABBF") | 
+           paid_bnf_code %in% c("0302000C0BPABBF", 
+                                "0302000C0BJABBF",
+                                "0302000C0BTACBF",
+                                "0302000C0BSABBF"))%>%
+  count(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, paid_bnf_code, paid_bnf_name, paiddmd_code)%>%
+  left_join(FSN%>%select(conceptId, term), by=c("prescribeddmd_code"="conceptId"))%>%
+  rename(prescribeddmd_name = term)%>%
+  left_join(FSN%>%select(conceptId, term), by=c("paiddmd_code"="conceptId"))%>%
+  rename(paiddmd_name = term)%>%
+  select(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, prescribeddmd_name,paid_bnf_code, paid_bnf_name, paiddmd_code, paiddmd_name, n)%>%
+  arrange(desc(n))%>%
+  as_tibble()%>%
+  View()
+
+meds_dt%>%
+  select(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, paid_bnf_code, paid_bnf_name, paiddmd_code)%>%
+  filter(prescribed_bnf_code %in% c("0403040W0AAASAS", 
+                                    "0403040W0BRACAS",
+                                    "0403040W0CCAAAS",
+                                    "0403040W0CFAAAS") | 
+           paid_bnf_code %in% c("0403040W0AAASAS", 
+                                "0403040W0BRACAS",
+                                "0403040W0CCAAAS",
+                                "0403040W0CFAAAS"))%>%
+  count(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, paid_bnf_code, paid_bnf_name, paiddmd_code)%>%
+  left_join(FSN%>%select(conceptId, term), by=c("prescribeddmd_code"="conceptId"))%>%
+  rename(prescribeddmd_name = term)%>%
+  left_join(FSN%>%select(conceptId, term), by=c("paiddmd_code"="conceptId"))%>%
+  rename(paiddmd_name = term)%>%
+  select(prescribed_bnf_code, prescribed_bnf_name, prescribeddmd_code, prescribeddmd_name,paid_bnf_code, paid_bnf_name, paiddmd_code, paiddmd_name, n)%>%
+  arrange(desc(n))%>%
+  as_tibble()%>%
+  View()
+
