@@ -1828,7 +1828,7 @@ p1<-t%>%
         legend.position="none")+
   labs(subtitle="Entries")+
   scale_x_discrete(expand=expansion(c(0.05,0.05)))+
-  scale_fill_discrete(limits=as.character(c(Dispensing, GP)))+
+  scale_fill_discrete(limits=as.character(c("Dispensing", "GP")))+
   scale_y_continuous(expand=expansion(c(0,0.1)))
 
 
@@ -1844,8 +1844,8 @@ p2<-t%>%
   labs(subtitle="Participants",
        x="Chapter",
        caption="Counts computed based on all available data (no time restrictions)")+
-  scale_x_discrete(expand=expansion(c(0.05,0.05)), limits=as.character(c(Dispensing, GP)))+
-  scale_fill_discrete(limits=as.character(c(Dispensing, GP)))+
+  scale_x_discrete(expand=expansion(c(0.05,0.05)))
+  scale_fill_discrete(limits=as.character(c("Dispensing", "GP")))+
   scale_y_continuous(expand=expansion(c(0,0.1)))
 
 p<-p1/p2+
