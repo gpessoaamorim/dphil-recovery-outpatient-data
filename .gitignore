@@ -7,4 +7,10 @@
 DPhil_RECOVERY.Rproj
 Thumbs.db
 Outputs/
+Workspace/
+Temporary directory/
 Misc/
+Tools/*
+!Tools/Codelists/
+.gitignore
+README.md

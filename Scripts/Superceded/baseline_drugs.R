@@ -278,7 +278,7 @@ sites <- read_csv("K:/QNAP/RECOVERY-deidentified/Datasets/RECOVERY sites/RECOVER
 
 # Load RECOVERY drug codelists ------------------
 ## SNOMED codelists ------------------
-file.list <- list.files(path="K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/DPhil_RECOVERY/Tools/Codelists/Medications_SNOMED/", full.names=T, pattern = "*.xlsx")
+file.list <- list.files(path="K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/DPhil_RECOVERY/Tools/Codelists/Medications_SNOMED/", full.names=T, pattern = ".xlsx")
 
 df = lapply(file.list, function(i){
   x=read_excel(i, sheet="Codelist")
@@ -341,7 +341,7 @@ codelists_snomed%<>%
 
 ## BNF codelists------------------
 
-file.list <- list.files(path="K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/DPhil_RECOVERY/Tools/Codelists/Medications_BNF/", full.names=T, pattern = "*.xlsx")
+file.list <- list.files(path="K:/QNAP/RECOVERY-deidentified/Team folders/Guilherme/DPhil_RECOVERY/Tools/Codelists/Medications_BNF/", full.names=T, pattern = ".xlsx")
 
 df = lapply(file.list, function(i){
   x=read_excel(i, sheet="Codelist")
@@ -1818,34 +1818,36 @@ t%<>%
 
 p1<-t%>%
   mutate(labels=reorder(labels, chapter))%>%
-  ggplot(aes(labels, Entries, fill=Dataset, group=Dataset))+
-  geom_bar(stat='identity', position='dodge')+
+  ggplot(aes(labels, Entries, color=Dataset, fill=Dataset))+
+  geom_bar(stat='identity', position=position_dodge2(preserve="single", width=0.9))+
   geom_text(data=t%>%filter(labels=="Cardiovascular System"), aes(label=Entries), size=5, position = position_dodge(width = 1.3), vjust=-.2)+
   geom_text(data=t%>%filter(labels!="Cardiovascular System"), aes(label=Entries), size=5, position = position_dodge(width = 1), vjust=-.2)+
   theme_gray(base_size=20)+
   theme(axis.text.x=element_blank(),
         axis.title.x = element_blank(),
-        legend.position="none")+
+        legend.position="none",
+        axis.title.y=element_blank())+
   labs(subtitle="Entries")+
   scale_x_discrete(expand=expansion(c(0.05,0.05)))+
-  scale_fill_discrete(limits=as.character(c("Dispensing", "GP")))+
+  scale_fill_discrete(breaks=as.character(c("Dispensing", "GP")))+
   scale_y_continuous(expand=expansion(c(0,0.1)))
 
 
 p2<-t%>%
   mutate(labels=reorder(labels, chapter))%>%
-  ggplot(aes(labels, Participants, fill=Dataset, group=Dataset))+
-  geom_bar(stat='identity', position='dodge')+
+  ggplot(aes(labels, Participants, color=Dataset, fill=Dataset))+
+  geom_bar(stat='identity', position=position_dodge2(preserve="single", width=0.9))+
   geom_text(aes(label=Participants), size=5, position = position_dodge(width = 1), vjust=-.2)+
   theme_gray(base_size=20)+
   theme(legend.position = "bottom",
-        axis.text.x = element_text(angle = 30, hjust=1)
-  )+
+        axis.text.x = element_text(angle = 30, hjust=1),
+        axis.title.x = element_blank(),
+        axis.title.y=element_blank())+
   labs(subtitle="Participants",
-       x="Chapter",
+       x="",
        caption="Counts computed based on all available data (no time restrictions)")+
-  scale_x_discrete(expand=expansion(c(0.05,0.05)))
-  scale_fill_discrete(limits=as.character(c("Dispensing", "GP")))+
+  scale_x_discrete(expand=expansion(c(0.05,0.05)))+
+  scale_fill_discrete(breaks=as.character(c("Dispensing", "GP")))+
   scale_y_continuous(expand=expansion(c(0,0.1)))
 
 p<-p1/p2+
@@ -7299,7 +7301,7 @@ rm(x, t, t1, t2, p2, table, drug_groups, joint_table)
 
 # 8. Baseline drug exposure ---------------------
 
-# merge randomisation dates and calculate time since randomisation
+## merge randomisation dates and calculate time since randomisation -----------
 
 ## gp
 
@@ -7307,7 +7309,7 @@ gp_dt%>%
   select(study_number, date, code)%>%
   inner_join(codelists_snomed, by=c("code"="ConceptId"))%>%
   left_join(rand_dates%>%select(study_number, rand_date))%>%
-  filter(rand_date<="2021-05-31")%>%
+  filter(rand_date<="2021-05-31")%>% # allow 2 month lag between data reception and analysis
   filter(date<rand_date)%>%
   mutate(time_before_rand = as.integer(difftime(rand_date, date, units = "days")))%>%
   mutate(dataset="GP")%>%
@@ -7321,7 +7323,7 @@ meds_dt%>%
   select(study_number, prescribed_bnf_code, processing_period_date)%>%
   inner_join(codelists_bnf, by=c("prescribed_bnf_code"="code"))%>%
   left_join(rand_dates%>%select(study_number, rand_date))%>%
-  filter(rand_date<="2021-05-31")%>%
+  filter(rand_date<="2021-05-31")%>% # allow 2 month lag between data reception and analysis
   filter(processing_period_date<rand_date)%>%
   mutate(rand_month=as.Date(paste0(str_sub(rand_date, 1, 8), "01")))%>%
   mutate(time_before_rand = abs(interval(rand_month, processing_period_date)%/%months(1)))%>%
@@ -7340,6 +7342,7 @@ rm(x1, x2)
 x%>%distinct(study_number)%>%nrow()->total_participants
 
 
+# apply logic rule: 90 days before rand in GP and 3 calendar months previous in Dispensing
 x%>%
   filter(dataset=="GP")%>%
   filter(time_before_rand<=90 & time_before_rand>=0)%>%
@@ -8015,6 +8018,175 @@ ggsave("Outputs/Figures/baseline_drugs_recovery/counts_per_dataset_barchart_addi
 
 
 
+# explore different rules to deal with date fields--------
+
+# some drug groups as examples
+drugs_rules <- c("antiplatelets",
+                 "diabetes_drugs_not_insulin",
+                 "ics",
+                 "antibacterials",
+                 "antifungals",
+                 "immunosuppressive_drugs",
+                 "Systemic steroids",
+                 "insulin")
+
+## 1st rule --------
+# 90 days before rand in GP and 3 calendar months previous in Dispensing, ignore randomisation month
+
+# calculate intervals (GP); NB these will be the same for all rules
+gp_dt%>% # dataset
+  select(study_number, date, code)%>% # select some variables
+  inner_join(codelists_snomed, by=c("code"="ConceptId"))%>% # join codelists
+  filter(codelist %in% drugs_rules)%>% # filter to drug groups of interest
+  left_join(rand_dates%>%select(study_number, rand_date))%>% # join randomisation dates
+  filter(rand_date<="2021-05-31")%>% # allow 2 month lag between data reception and analysis
+  filter(date<rand_date)%>% # select records before date of randomisation (i.e. records in the date of randomisation are excluded)
+  mutate(time_before_rand = as.integer(difftime(rand_date, date, units = "days")))%>% # calculate time before randomization in days
+  mutate(dataset="GP")%>% # apply dataset flag
+  select(study_number, code, codelist, date, rand_date, time_before_rand, dataset)%>% # select some variables
+  as_tibble()->x1 # store
+
+# calculate intervals  (dispensing)
+meds_dt%>% # dataset
+  select(study_number, prescribed_bnf_code, processing_period_date)%>% # select some variables
+  inner_join(codelists_bnf, by=c("prescribed_bnf_code"="code"))%>% # join codelists
+  filter(codelist %in% drugs_rules)%>% # filter to drug groups of interest
+  left_join(rand_dates%>%select(study_number, rand_date))%>% # join randomisation dates
+  filter(rand_date<="2021-05-31")%>% # allow 2 month lag between data reception and analysis
+  filter(processing_period_date<rand_date)%>% # select records before randomisation (with date as is) - means only records in the month before randomisation will be pulled through
+  mutate(rand_month=as.Date(paste0(str_sub(rand_date, 1, 8), "01")))%>% # extract record month from processing_period_date
+  mutate(time_before_rand = abs(interval(rand_month, processing_period_date)%/%months(1)))%>% # calculate number of months before randomsiation
+  rename(code=prescribed_bnf_code, # renaming variables
+         date=processing_period_date)%>%
+  select(-rand_month)%>% # excluding randomisation month (after calculations)
+  mutate(dataset="Dispensing")%>% # apply dataset flag
+  select(study_number, code, codelist, date, rand_date, time_before_rand, dataset)%>% # selecting some varibles
+  as_tibble()->x2 # store
+
+
+x<-rbind(x1, x2) # merge
+
+x%>%distinct(study_number)%>%nrow()->total_participants # calculate total number of participants included in this assesment (for proportions)
+# NB this is not the entire cohort since we have trimmed to records two month before data reception
+
+# apply rule 
+x%>%
+  filter(dataset=="GP")%>% # select records from the GP dataset
+  filter(time_before_rand<=90 & time_before_rand>0)%>%  # apply rule (records in the 90 days before randomisation)
+ 
+  rbind(
+    x%>%
+      filter(dataset=="Dispensing")%>% # select records from the Dispensing dataset
+      filter(time_before_rand<=3 & time_before_rand>=1))%>% #apply rule: 3 calendar months before randomisation, and ignore month of randomisation
+  mutate(rule="ignore_rand_month")->t1 # apply rule flag and store
+
+
+  
+## 2nd rule ------
+# 90 days before rand in GP or Dispensing, use Dispensing date as first day of month
+
+# calculate intervals (using first day of month)
+meds_dt%>% # dataset
+  select(study_number, prescribed_bnf_code, processing_period_date)%>% # select some variables
+  inner_join(codelists_bnf, by=c("prescribed_bnf_code"="code"))%>% # join codelists
+  filter(codelist %in% drugs_rules)%>% # filter to drug groups of interest
+  left_join(rand_dates%>%select(study_number, rand_date))%>% # join randomisation dates
+  filter(rand_date<="2021-05-31")%>% # allow 2 month lag between data reception and analysis
+  filter(processing_period_date<rand_date)%>% # select records before randomisation (with date as is) - means only records in the month before randomisation will be pulled through
+  rename(date=processing_period_date)%>% #rename variable
+  mutate(time_before_rand = as.integer(difftime(rand_date, date, units = "days")))%>% # calculate difference in days
+  rename(code=prescribed_bnf_code)%>% # renaming variables
+  mutate(dataset="Dispensing")%>% # apply dataset flag
+  select(study_number, code, codelist, date, rand_date, time_before_rand, dataset)%>% # selecting some varibles
+  as_tibble()->x2 # store
+
+# apply rule
+x%>%
+  filter(time_before_rand<=90 & time_before_rand>0)%>% # 90 days before rand in both datasets
+  mutate(rule="first_day")->t2
+
+t<-rbind(t1, t2)
+
+rm(t1, t2)
+
+
+## 3rd rule -------
+# 90 days before rand in GP or Dispensing, use Dispensing date as last day of month
+
+# calculate intervals (using 15th of the month)
+meds_dt%>% # dataset
+  select(study_number, prescribed_bnf_code, processing_period_date)%>% # select some variables
+  inner_join(codelists_bnf, by=c("prescribed_bnf_code"="code"))%>% # join codelists
+  filter(codelist %in% drugs_rules)%>% # filter to drug groups of interest
+  left_join(rand_dates%>%select(study_number, rand_date))%>% # join randomisation dates
+  filter(rand_date<="2021-05-31")%>% # allow 2 month lag between data reception and analysis
+  mutate(date = ceiling_date(processing_period_date, "month") - days(1))%>% # transform record date to the last date of the month
+  filter(date<rand_date)%>% # include only records before date of randomisation
+  rename(date=processing_period_date)%>% #rename variable
+  mutate(time_before_rand = as.integer(difftime(rand_date, date, units = "days")))%>% # calculate difference in days
+  rename(code=prescribed_bnf_code)%>% # renaming variables
+  mutate(dataset="Dispensing")%>% # apply dataset flag
+  select(study_number, code, codelist, date, rand_date, time_before_rand, dataset)%>% # selecting some varibles
+  as_tibble()->x2 # store
+
+
+
+# apply rule
+x%>%
+  filter(time_before_rand<=90 & time_before_rand>0)%>% # 90 days before rand in both datasets
+  mutate(rule="last_day")->t1
+
+t<-rbind(t, t1)
+
+rm(t1)
+
+
+## 4th rule -------
+# 90 days before rand in GP or Dispensing, use Dispensing date as the 15th of the month
+
+# calculate intervals (using 15th of the month)
+meds_dt%>% # dataset
+  select(study_number, prescribed_bnf_code, processing_period_date)%>% # select some variables
+  inner_join(codelists_bnf, by=c("prescribed_bnf_code"="code"))%>% # join codelists
+  filter(codelist %in% drugs_rules)%>% # filter to drug groups of interest
+  left_join(rand_dates%>%select(study_number, rand_date))%>% # join randomisation dates
+  filter(rand_date<="2021-05-31")%>% # allow 2 month lag between data reception and analysis
+  mutate(date=as.Date(paste0(str_sub(processing_period_date, 1, 8), "15")))%>% # transform record date to the 15th of the month
+  filter(date<rand_date)%>% # include only records before date of randomisation
+  rename(date=processing_period_date)%>% #rename variable
+  mutate(time_before_rand = as.integer(difftime(rand_date, date, units = "days")))%>% # calculate difference in days
+  rename(code=prescribed_bnf_code)%>% # renaming variables
+  mutate(dataset="Dispensing")%>% # apply dataset flag
+  select(study_number, code, codelist, date, rand_date, time_before_rand, dataset)%>% # selecting some varibles
+  as_tibble()->x2 # store
+
+
+
+# apply rule
+x%>%
+  filter(time_before_rand<=90 & time_before_rand>0)%>% # 90 days before rand in both datasets
+  mutate(rule="day_15")->t1
+
+t<-rbind(t, t1)
+
+rm(t1)
+
+
+# calculate
+
+t%>%
+  group_by(codelist, rule)%>%
+  summarise(Dispensing=n_distinct(study_number[dataset=="Dispensing"]),
+            Dispensing_prop=round(Dispensing/total_participants*100,2),
+            GP_Dispensing=n_distinct(study_number),
+            GP_Dispensing_prop=round(GP_Dispensing/total_participants*100, 2))%>%
+  pivot_wider(id_cols=c(codelist, Dispensing, GP_Dispensing, Dispensing_prop, GP_Dispensing_prop), names_from = "rule", values_from=c("Dispensing", "Dispensing_prop", "GP_Dispensing", "GP_Dispensing_prop"))->baseline_rules_table
+
+view(baseline_rules_table)
+
+
+    
+    
 
 
 
@@ -8026,19 +8198,24 @@ ggsave("Outputs/Figures/baseline_drugs_recovery/counts_per_dataset_barchart_addi
 
 
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
 
 
 
 
 
-
-
-
-
-
-
-# 9. Drug initiation after randomisation ---------------
+1# 9. Drug initiation after randomisation ---------------
 
 
 ## calculate pts not at risk (all groups) -------
@@ -9417,6 +9594,7 @@ ggsave("Outputs/Figures/baseline_drugs_recovery/drug_initiation_proportions_data
 
 
 
+## (IN PROGRESS) explore different rules --------
 
 
 
