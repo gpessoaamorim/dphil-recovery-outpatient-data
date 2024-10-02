@@ -10,8 +10,11 @@ Outputs/
 Workspace/
 Temporary directory/
 Misc/
+Tools/CDISC
+Tools/Uk countries
 Tools/
-!Tools/Codelists/
 .gitignore
 README.md
-.xlsx
+Scripts/Misc
+Scripts/Superceded
+Scripts/terminologies
