@@ -10,7 +10,8 @@ Outputs/
 Workspace/
 Temporary directory/
 Misc/
-Tools/*
+Tools/
 !Tools/Codelists/
 .gitignore
 README.md
+.xlsx
